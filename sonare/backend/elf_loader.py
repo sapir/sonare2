@@ -1,6 +1,7 @@
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
-from .backend import Symbol
+from elftools.elf.constants import SH_FLAGS
+from .backend import Symbol, Section
 
 
 class Elf:
@@ -11,6 +12,15 @@ class Elf:
     def update_backend(self, backend):
         for sym in self.iter_symbols():
             backend.symbols.add(sym)
+
+        # TODO: use segments if no sections
+        for section in self.elffile.iter_sections():
+            if section["sh_flags"] & SH_FLAGS.SHF_ALLOC:
+                name = section.name
+                addr = section["sh_addr"]
+                data = section.data()
+
+                backend.sections.add(Section(addr, data, name=name))
 
     def iter_symbols(self):
         for section in self.elffile.iter_sections():
