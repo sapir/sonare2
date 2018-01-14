@@ -1,7 +1,7 @@
 from sortedcontainers import SortedDict
 
 
-class Symbol(object):
+class Symbol:
     def __init__(self, name, addr):
         self.name = name
         self.addr = addr
@@ -10,7 +10,7 @@ class Symbol(object):
         return f"Symbol({self.name!r})"
 
 
-class SymbolTable(object):
+class SymbolTable:
     def __init__(self):
         self.by_name = SortedDict()
         self.by_addr = SortedDict()
@@ -23,6 +23,6 @@ class SymbolTable(object):
         self.by_addr[sym.addr] = sym.name
 
 
-class Backend(object):
+class Backend:
     def __init__(self):
         self.symbols = SymbolTable()

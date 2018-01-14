@@ -3,7 +3,7 @@ from elftools.elf.sections import SymbolTableSection
 from .backend import Symbol
 
 
-class Elf(object):
+class Elf:
     def __init__(self, filename):
         self.fileobj = open(filename, "rb")
         self.elffile = ELFFile(self.fileobj)
