@@ -15,6 +15,9 @@ class SymbolTable(object):
         self.by_name = SortedDict()
         self.by_addr = SortedDict()
 
+    def __repr__(self):
+        return f"<SymbolTable, {len(self.by_name)} symbols>"
+
     def add(self, sym):
         self.by_name[sym.name] = sym.addr
         self.by_addr[sym.addr] = sym.name
