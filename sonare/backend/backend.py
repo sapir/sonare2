@@ -23,7 +23,7 @@ class Range:
     Ranges include the start address but not the end address.
     """
 
-    def __init__(self, start, end=None, name=None, size=None, attrs=None):
+    def __init__(self, start, end=None, name=None, attrs=None, size=None):
         self.start = start
         self.attrs = {} if attrs is None else attrs
 
@@ -85,8 +85,18 @@ class RangeTable:
         cur.execute(*args)
         return cur.fetchone()
 
+    def _row_to_obj(self, row):
+        return Range(*row)
+
+    def _query_first_obj(self, *args):
+        row = self._query_first(*args)
+        if row is None:
+            return None
+        else:
+            return self._row_to_obj(row)
+
     def get_at(self, addr):
-        return self._query_first(
+        return self._query_first_obj(
             f"""
             SELECT * FROM {self.name}
             WHERE {addr} BETWEEN start AND end - 1
@@ -95,7 +105,7 @@ class RangeTable:
     def get_first_after(self, addr):
         """does not include any range including addr"""
 
-        return self._query_first(
+        return self._query_first_obj(
             f"""
             SELECT * FROM {self.name}
             WHERE start > {addr}
@@ -106,7 +116,7 @@ class RangeTable:
     def get_last_before(self, addr):
         """does not include any range including addr"""
 
-        return self._query_first(
+        return self._query_first_obj(
             f"""
             SELECT * FROM {self.name}
             WHERE end <= {addr}
@@ -115,7 +125,7 @@ class RangeTable:
             """)
 
     def get_by_name(self, name):
-        return self._query_first(
+        return self._query_first_obj(
             f"SELECT * FROM {self.name} WHERE name = ? LIMIT 1",
             (name, ))
 
@@ -144,12 +154,12 @@ class RangeTable:
     def iter_by_addr(self):
         cur = self.db.cursor()
         cur.execute(f"SELECT * FROM {self.name} ORDER BY start")
-        return iter(cur)
+        return map(self._row_to_obj, cur)
 
     def iter_by_name(self):
         cur = self.db.cursor()
         cur.execute(f"SELECT * FROM {self.name} ORDER BY name")
-        return iter(cur)
+        return map(self._row_to_obj, cur)
 
 
 class Backend:
