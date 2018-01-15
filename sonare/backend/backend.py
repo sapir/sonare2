@@ -45,6 +45,9 @@ class Range:
     def size(self):
         return self.end - self.start
 
+    def __contains__(self, addr):
+        return self.start <= addr < self.end
+
 
 class RangeTable:
     """
