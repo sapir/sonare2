@@ -1,7 +1,6 @@
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 from elftools.elf.constants import SH_FLAGS
-from .backend import Symbol, Section
 
 
 class Elf:
@@ -10,23 +9,40 @@ class Elf:
         self.elffile = ELFFile(self.fileobj)
 
     def update_backend(self, backend):
-        for sym in self.iter_symbols():
-            backend.symbols.add(sym)
-
         # TODO: use segments if no sections
         for section in self.elffile.iter_sections():
             if section["sh_flags"] & SH_FLAGS.SHF_ALLOC:
                 name = section.name
                 addr = section["sh_addr"]
-                data = section.data()
+                size = section["sh_size"]
+                # TODO: put data somewhere
+                # data = section.data()
 
-                backend.sections.add(Section(addr, data, name=name))
+                backend.sections.add(addr, addr + size, name=name)
+
+        for sym in self.iter_symbols():
+            if not sym.name:
+                continue
+
+            section_index = sym["st_shndx"]
+            # TODO
+            if isinstance(section_index, str):
+                continue
+
+            section = self.elffile.get_section(section_index)
+            section_addr = section["sh_addr"]
+            sym_addr = section_addr + sym["st_value"]
+
+            # TODO
+            if backend.symbols.get_at(sym_addr):
+                continue
+
+            backend.symbols.add(sym_addr, name=sym.name)
 
     def iter_symbols(self):
         for section in self.elffile.iter_sections():
             if isinstance(section, SymbolTableSection):
-                for sym in section.iter_symbols():
-                    yield Symbol(sym.name, sym["st_value"])
+                yield from section.iter_symbols()
 
 
 def load_elf(backend, filename):

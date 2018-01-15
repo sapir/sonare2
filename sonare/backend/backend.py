@@ -1,84 +1,161 @@
-from sortedcontainers import SortedDict, SortedListWithKey
+import sqlite3
+import json
+
+
+sqlite3.register_adapter(dict, json.dumps)
+sqlite3.register_converter("json", json.loads)
 
 
 class Symbol:
-    def __init__(self, name, addr):
+    def __init__(self, name, addr, size=1):
         self.name = name
         self.addr = addr
+        self.size = size
 
     def __repr__(self):
         return f"Symbol({self.name!r})"
 
 
-class SymbolTable:
-    def __init__(self):
-        self.by_name = SortedDict()
-        self.by_addr = SortedDict()
+class Range:
+    """
+    A [start address, end address] range, possibly with extra attributes.
 
-    def __repr__(self):
-        return f"<SymbolTable, {len(self.by_name)} symbols>"
+    Ranges include the start address but not the end address.
+    """
 
-    def add(self, sym):
-        self.by_name[sym.name] = sym.addr
-        self.by_addr[sym.addr] = sym.name
+    def __init__(self, start, end=None, name=None, size=None, attrs=None):
+        self.start = start
+        self.attrs = {} if attrs is None else attrs
 
+        if end is None:
+            if size is None:
+                self.end = start + 1
+            else:
+                self.end = start + size
+        else:
+            assert size is None, "Please specify size or end but not both."
+            self.end = end
 
-class Section:
-    def __init__(self, addr, buf, name=None):
         self.name = name
-        self.addr = addr
-        self.buf = buf
 
     def __repr__(self):
-        return f"<Section {self.name!r} @ {self.addr:#x}>"
+        return f"Range({self.start:#x}, {self.end:#x}, name={self.name!r})"
 
     @property
     def size(self):
-        return len(self.buf)
-
-    @property
-    def start(self):
-        return self.addr
-
-    @property
-    def end(self):
-        return self.start + self.size
-
-    def contains(self, addr):
-        return self.start <= addr < self.end
+        return self.end - self.start
 
 
-class SectionTable:
-    def __init__(self):
-        self.by_addr = SortedListWithKey(key=lambda section: section.addr)
+class RangeTable:
+    """
+    An indexed list of Range objects, stored in the database.
+    """
 
-    def add(self, section):
-        self.by_addr.add(section)
+    def __init__(self, db, name):
+        self.db = db
+        self.name = name
+        self.autocreate()
+
+    def __repr__(self):
+        return f"<RangeTable {self.name!r}>"
+
+    def autocreate(self):
+        self.db.execute(f"""
+            CREATE TABLE IF NOT EXISTS {self.name} (
+                start int,
+                end int,
+                name text,
+                attrs json,
+                PRIMARY KEY (start)
+            )
+            """)
+
+        self.db.execute(f"""
+            CREATE UNIQUE INDEX IF NOT EXISTS {self.name}_end_idx
+            ON {self.name} (end)
+            """)
+
+        self.db.execute(f"""
+            CREATE UNIQUE INDEX IF NOT EXISTS {self.name}_name_idx
+            ON {self.name} (name)
+            """)
+
+    def _query_first(self, *args):
+        cur = self.db.cursor()
+        cur.execute(*args)
+        return cur.fetchone()
 
     def get_at(self, addr):
-        i = self.by_addr.bisect_key_left(addr)
+        return self._query_first(
+            f"""
+            SELECT * FROM {self.name}
+            WHERE {addr} BETWEEN start AND end - 1
+            """)
 
-        try:
-            # if addr == section start
-            section = self.by_addr[i]
-            if section.contains(addr):
-                return section
+    def get_first_after(self, addr):
+        """does not include any range including addr"""
 
-            # usual case
-            if i > 0:
-                section = self.by_addr[i - 1]
-                if section.contains(addr):
-                    return section
+        return self._query_first(
+            f"""
+            SELECT * FROM {self.name}
+            WHERE start > {addr}
+            ORDER BY start
+            LIMIT 1
+            """)
 
-            return None
+    def get_last_before(self, addr):
+        """does not include any range including addr"""
 
-        except IndexError:
-            # if we got an invalid index, then address definitely isn't
-            # included in a section
-            return None
+        return self._query_first(
+            f"""
+            SELECT * FROM {self.name}
+            WHERE end <= {addr}
+            ORDER BY end DESC
+            LIMIT 1
+            """)
+
+    def get_by_name(self, name):
+        return self._query_first(
+            f"SELECT * FROM {self.name} WHERE name = ? LIMIT 1",
+            (name, ))
+
+    def add(self, start, end=None, name=None, **kwargs):
+        if end is None:
+            end = start + 1
+
+        cur = self.db.cursor()
+        cur.execute(
+            f"""
+            INSERT INTO {self.name}(start, end, name, attrs)
+            VALUES(?, ?, ?, json(?))
+            """,
+            (start, end, name, kwargs))
+
+    def add_obj(self, range_obj):
+        return self.add(
+            range_obj.start,
+            range_obj.end,
+            range_obj.name,
+            **range_obj.attrs)
+
+    def __len__(self):
+        return self._query_first(f"SELECT COUNT(*) FROM {self.name}")[0]
+
+    def iter_by_addr(self):
+        cur = self.db.cursor()
+        cur.execute(f"SELECT * FROM {self.name} ORDER BY start")
+        return iter(cur)
+
+    def iter_by_name(self):
+        cur = self.db.cursor()
+        cur.execute(f"SELECT * FROM {self.name} ORDER BY name")
+        return iter(cur)
 
 
 class Backend:
-    def __init__(self):
-        self.sections = SectionTable()
-        self.symbols = SymbolTable()
+    def __init__(self, filename=":memory:"):
+        self.db = sqlite3.connect(
+            filename, detect_types=sqlite3.PARSE_DECLTYPES)
+
+        self.sections = RangeTable(self.db, "sections")
+        self.symbols = RangeTable(self.db, "symbols")
