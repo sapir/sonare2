@@ -14,11 +14,9 @@ class Elf:
             if section["sh_flags"] & SH_FLAGS.SHF_ALLOC:
                 name = section.name
                 addr = section["sh_addr"]
-                size = section["sh_size"]
-                # TODO: put data somewhere
-                # data = section.data()
+                data = section.data()
 
-                backend.sections.add(addr, addr + size, name=name)
+                backend.sections.add(addr, data, name=name)
 
         for sym in self.iter_symbols():
             if not sym.name:

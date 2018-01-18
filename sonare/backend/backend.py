@@ -1,5 +1,11 @@
 import sqlite3
 import json
+import os
+from operator import attrgetter
+from collections import namedtuple
+from mmap import mmap
+from sortedcontainers import SortedListWithKey
+from struct import unpack_from
 
 
 sqlite3.register_adapter(dict, json.dumps)
@@ -164,11 +170,151 @@ class RangeTable:
         cur.execute(f"SELECT * FROM {self.name} ORDER BY name")
         return map(self._row_to_obj, cur)
 
+    def iter_where_overlaps(self, start, end):
+        cur = self.db.cursor()
+        cur.execute(
+            f"""
+            SELECT * FROM {self.name}
+            WHERE ? BETWEEN start AND end - 1
+               OR start BETWEEN ? AND ? - 1
+            ORDER BY start
+            """,
+            (start, start, end))
+
+        return map(self._row_to_obj, cur)
+
+
+MappedBuffer = namedtuple("MappedBuffer", "start map_obj")
+
+
+class BufferManager:
+    ENDIANNESS = "="
+
+    def __init__(self, buf_dir):
+        self.buf_dir = buf_dir
+
+        if not self.running_from_memory and not os.path.isdir(self.buf_dir):
+            os.makedirs(self.buf_dir)
+
+        self.buffers = SortedListWithKey(key=attrgetter("start"))
+
+    def clear(self):
+        self.buffers.clear()
+
+    @property
+    def running_from_memory(self):
+        return self.buf_dir is None
+
+    def _get_buf_path(self, start):
+        return os.path.join(self.buf_dir, f"buf_{start:x}")
+
+    def load(self, start):
+        """load buffer that starts at `start` from disk"""
+
+        if self.running_from_memory:
+            raise Exception("running from memory, can't load buffer from disk")
+
+        filename = self._get_buf_path(start)
+        f = open(filename, "r+b")
+        map_obj = mmap(f.fileno(), 0)
+        self.buffers.add(MappedBuffer(start, map_obj))
+
+    def add(self, start, data):
+        if self.running_from_memory:
+            map_obj = mmap(-1, len(data))
+            map_obj[:] = data
+            self.buffers.add(MappedBuffer(start, map_obj))
+            return
+
+        filename = self._get_buf_path(start)
+
+        with open(filename, "wb") as f:
+            f.write(data)
+
+        self.load(start)
+
+    def get_mapped_buf(self, addr):
+        i = self.buffers.bisect_key_left(addr)
+        if i < len(self.buffers):
+            if addr == self.buffers[i].start:
+                return self.buffers[i]
+            elif i > 0:
+                mapped_buf = self.buffers[i - 1]
+                assert addr >= mapped_buf.start
+
+                end = mapped_buf.start + len(mapped_buf.map_obj)
+                if addr < end:
+                    return mapped_buf
+
+        raise KeyError(f"address {addr:#x} not found in loaded buffers")
+
+    def get_buf_ofs(self, addr):
+        mapped_buf = self.get_mapped_buf(addr)
+        return (mapped_buf, addr - mapped_buf.start)
+
+    def get_struct(self, fmt, addr):
+        mapped_buf, ofs = self.get_buf_ofs(addr)
+        return unpack_from(self.ENDIANNESS + fmt, mapped_buf.map_obj, ofs)
+
+    def get_byte(self, addr):
+        return self.get_struct("B", addr)[0]
+
+    def get_short(self, addr):
+        return self.get_struct("H", addr)[0]
+
+    def get_long(self, addr):
+        return self.get_struct("L", addr)[0]
+
+
+class SectionTable(RangeTable):
+    def __init__(self, db, buf_mgr):
+        super().__init__(db, "sections")
+
+        self.db = db
+        self.buf_mgr = buf_mgr
+        self._load()
+
+    def _load(self):
+        with self.db:
+            self.buf_mgr.clear()
+
+            for section in self.iter_by_addr():
+                self.buf_mgr.load(section.start)
+
+    def add(self, start, data, **kwargs):
+        with self.db:
+            end = start + len(data)
+
+            overlaps = list(self.iter_where_overlaps(start, end))
+            if overlaps:
+                raise Exception(
+                    f"{start:#x}-{end:#x} overlaps with: {overlaps!r}")
+
+            self.buf_mgr.add(start, data)
+
+            super().add(start, end, **kwargs)
+
 
 class Backend:
-    def __init__(self, filename=":memory:"):
-        self.db = sqlite3.connect(
-            filename, detect_types=sqlite3.PARSE_DECLTYPES)
+    def __init__(self, filename=None):
+        self.filename = filename
 
-        self.sections = RangeTable(self.db, "sections")
+        self.db = sqlite3.connect(
+            self._sqlite_path,
+            detect_types=sqlite3.PARSE_DECLTYPES)
+
+        self.buf_mgr = BufferManager(self.buf_dir)
+
+        self.sections = SectionTable(self.db, self.buf_mgr)
         self.symbols = RangeTable(self.db, "symbols")
+
+    @property
+    def _sqlite_path(self):
+        return ":memory:" if self.filename is None else self.filename
+
+    @property
+    def buf_dir(self):
+        if self.filename is None:
+            return None
+        else:
+            return f"{self.filename}.buffers"
