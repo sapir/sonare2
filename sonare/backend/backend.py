@@ -58,9 +58,10 @@ class RangeTable:
     def __init__(self, db, name, allow_overlaps=True):
         self.db = db
         self.name = name
-        self.autocreate()
 
         self.allow_overlaps = allow_overlaps
+
+        self.autocreate()
 
     def __repr__(self):
         return f"<RangeTable {self.name!r}>"
@@ -76,13 +77,15 @@ class RangeTable:
             )
             """)
 
+        unique_str = "" if self.allow_overlaps else "UNIQUE"
+
         self.db.execute(f"""
-            CREATE UNIQUE INDEX IF NOT EXISTS {self.name}_end_idx
+            CREATE {unique_str} INDEX IF NOT EXISTS {self.name}_end_idx
             ON {self.name} (end)
             """)
 
         self.db.execute(f"""
-            CREATE UNIQUE INDEX IF NOT EXISTS {self.name}_name_idx
+            CREATE {unique_str} INDEX IF NOT EXISTS {self.name}_name_idx
             ON {self.name} (name)
             """)
 
