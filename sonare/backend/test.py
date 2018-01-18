@@ -1,11 +1,21 @@
+import os
 from .backend import Backend
 from .elf_loader import load_elf
 
 
 if __name__ == '__main__':
-    b = Backend()
+    if 1:
+        filename = "test.sonare"
 
-    load_elf(b, "test.so")
+        existed_before = os.path.isfile(filename)
+
+        b = Backend("test.sonare")
+
+        if not existed_before:
+            load_elf(b, "test.so")
+    else:
+        b = Backend()
+        load_elf(b, "test.so")
 
     print(f"found {len(b.symbols)} symbols")
 
