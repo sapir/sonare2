@@ -32,10 +32,6 @@ class Elf:
                 section_addr = section["sh_addr"]
                 sym_addr = section_addr + sym["st_value"]
 
-                # TODO
-                if backend.symbols.get_at(sym_addr):
-                    continue
-
                 backend.symbols.add(sym_addr, name=sym.name)
 
     def iter_symbols(self):
