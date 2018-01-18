@@ -32,7 +32,12 @@ class Elf:
                 section_addr = section["sh_addr"]
                 sym_addr = section_addr + sym["st_value"]
 
-                backend.symbols.add(sym_addr, name=sym.name)
+                # don't allow zero-length symbols, otherwise range doesn't
+                # include anything
+                size = max(sym["st_size"], 1)
+                sym_end = sym_addr + size
+
+                backend.symbols.add(sym_addr, sym_end, name=sym.name)
 
     def iter_symbols(self):
         for section in self.elffile.iter_sections():
