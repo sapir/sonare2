@@ -3,7 +3,7 @@ from operator import attrgetter
 from collections import namedtuple
 from mmap import mmap
 from sortedcontainers import SortedListWithKey
-from struct import unpack_from
+from struct import pack_into, unpack_from
 
 
 MappedBuffer = namedtuple("MappedBuffer", "start map_obj")
@@ -97,3 +97,20 @@ class BufferManager:
 
     def get_long(self, addr):
         return self.get_struct("L", addr)[0]
+
+    def set_struct(self, fmt, addr, *values):
+        mapped_buf, ofs = self.get_buf_ofs(addr)
+        pack_into(self.ENDIANNESS + fmt, mapped_buf.map_obj, ofs, *values)
+
+    def set_bytes(self, addr, data):
+        mapped_buf, ofs = self.get_buf_ofs(addr)
+        mapped_buf.map_obj[ofs:ofs + len(data)] = data
+
+    def set_byte(self, addr, value):
+        self.set_struct("B", addr, value)
+
+    def set_short(self, addr, value):
+        self.set_struct("H", addr, value)
+
+    def set_long(self, addr, value):
+        self.set_struct("L", addr, value)
