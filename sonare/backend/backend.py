@@ -69,15 +69,21 @@ class RangeTable:
     def autocreate(self):
         self.db.execute(f"""
             CREATE TABLE IF NOT EXISTS {self.name} (
+                id int,
                 start int,
                 end int,
                 name text,
                 attrs json,
-                PRIMARY KEY (start)
+                PRIMARY KEY (id)
             )
             """)
 
         unique_str = "" if self.allow_overlaps else "UNIQUE"
+
+        self.db.execute(f"""
+            CREATE {unique_str} INDEX IF NOT EXISTS {self.name}_start_idx
+            ON {self.name} (start)
+            """)
 
         self.db.execute(f"""
             CREATE {unique_str} INDEX IF NOT EXISTS {self.name}_end_idx
@@ -95,7 +101,7 @@ class RangeTable:
         return cur.fetchone()
 
     def _row_to_obj(self, row):
-        return Range(*row)
+        return Range(*row[1:])
 
     def _query_first_obj(self, *args):
         row = self._query_first(*args)
