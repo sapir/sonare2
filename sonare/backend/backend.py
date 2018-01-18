@@ -55,10 +55,12 @@ class RangeTable:
     An indexed list of Range objects, stored in the database.
     """
 
-    def __init__(self, db, name):
+    def __init__(self, db, name, allow_overlaps=True):
         self.db = db
         self.name = name
         self.autocreate()
+
+        self.allow_overlaps = allow_overlaps
 
     def __repr__(self):
         return f"<RangeTable {self.name!r}>"
@@ -137,6 +139,13 @@ class RangeTable:
         if end is None:
             end = start + 1
 
+        if not self.allow_overlaps:
+            overlaps = list(self.iter_where_overlaps(start, end))
+            if overlaps:
+                raise Exception(
+                    f"{start:#x}-{end:#x} (name={name!r})"
+                    f" overlaps with: {overlaps!r}")
+
         cur = self.db.cursor()
         cur.execute(
             f"""
@@ -181,7 +190,7 @@ class RangeTable:
 
 class SectionTable(RangeTable):
     def __init__(self, db, buf_mgr):
-        super().__init__(db, "sections")
+        super().__init__(db, "sections", allow_overlaps=False)
 
         self.db = db
         self.buf_mgr = buf_mgr
@@ -198,14 +207,9 @@ class SectionTable(RangeTable):
         with self.db:
             end = start + len(data)
 
-            overlaps = list(self.iter_where_overlaps(start, end))
-            if overlaps:
-                raise Exception(
-                    f"{start:#x}-{end:#x} overlaps with: {overlaps!r}")
+            super().add(start, end, **kwargs)
 
             self.buf_mgr.add(start, data)
-
-            super().add(start, end, **kwargs)
 
 
 class Backend:
