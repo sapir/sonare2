@@ -78,6 +78,17 @@ class BufferManager:
         mapped_buf, ofs = self.get_buf_ofs(addr)
         return unpack_from(self.ENDIANNESS + fmt, mapped_buf.map_obj, ofs)
 
+    def get_bytes(self, addr, size):
+        mapped_buf, ofs = self.get_buf_ofs(addr)
+        result = mapped_buf.map_obj[ofs:ofs + size]
+
+        if len(result) < size:
+            raise KeyError(
+                f"only found {len(result):#x} bytes @ {addr:#x},"
+                f" instead of {size:#x}")
+
+        return result
+
     def get_byte(self, addr):
         return self.get_struct("B", addr)[0]
 
