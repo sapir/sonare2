@@ -18,6 +18,7 @@ if __name__ == '__main__':
         load_elf(b, "test.so")
 
     print(f"found {len(b.symbols)} symbols")
+    print(f"found {len(b.functions)} functions")
 
     for sec in b.sections.iter_by_addr():
         print(sec)

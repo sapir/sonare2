@@ -1,3 +1,4 @@
+import sys
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 from elftools.elf.constants import SH_FLAGS
@@ -38,6 +39,17 @@ class Elf:
                 sym_end = sym_addr + size
 
                 backend.symbols.add(sym_addr, sym_end, name=sym.name)
+
+                if sym["st_info"]["type"] == "STT_FUNC":
+                    overlaps = list(backend.functions.iter_where_overlaps(
+                        sym_addr, sym_end))
+                    if overlaps:
+                        print(
+                            f"not adding {name}, it overlaps with"
+                            f" {', '.join(other.name for other in overlaps)}",
+                            file=sys.stderr)
+                    else:
+                        backend.functions.add(sym_addr, sym_end, name=sym.name)
 
     def iter_symbols(self):
         for section in self.elffile.iter_sections():

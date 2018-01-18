@@ -233,6 +233,7 @@ class Backend:
 
         self.sections = SectionTable(self.db, self.buf_mgr)
         self.symbols = RangeTable(self.db, "symbols")
+        self.functions = RangeTable(self.db, "functions", allow_overlaps=False)
 
     @property
     def _sqlite_path(self):
