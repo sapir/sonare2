@@ -84,7 +84,8 @@ class BufferManager:
 
         if len(result) < size:
             raise KeyError(
-                f"only found {len(result):#x} bytes @ {addr:#x},"
+                f"only found {len(result):#x} bytes @ {addr:#x}"
+                f" ({mapped_buf.start:#x}+{ofs:#x}),"
                 f" instead of {size:#x}")
 
         return result
