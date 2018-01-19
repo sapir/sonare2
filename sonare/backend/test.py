@@ -1,6 +1,7 @@
 import os
 from .backend import Backend
 from .elf_loader import load_elf
+from .analysis import analyze_all
 
 
 if __name__ == '__main__':
@@ -13,9 +14,12 @@ if __name__ == '__main__':
 
         if not existed_before:
             load_elf(b, "test.so")
+            analyze_all(b)
     else:
         b = Backend()
         load_elf(b, "test.so")
+
+        analyze_all(b)
 
     print(f"found {len(b.symbols)} symbols")
     print(f"found {len(b.functions)} functions")
