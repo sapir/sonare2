@@ -21,7 +21,7 @@ if __name__ == '__main__':
 
         analyze_all(b)
 
-    print(f"found {len(b.symbols)} symbols")
+    print(f"found {len(b.aliases)} aliases")
     print(f"found {len(b.functions)} functions")
 
     for sec in b.sections.iter_by_addr():
