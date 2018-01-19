@@ -2,14 +2,27 @@ import sys
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 from elftools.elf.constants import SH_FLAGS, P_FLAGS
+from .backend import Range
+from .arch import BaseArch, ArmArch
 
 
 class Elf:
     def __init__(self, filename):
         self.fileobj = open(filename, "rb")
         self.elffile = ELFFile(self.fileobj)
+        self.arch = self.get_arch()
+
+    def get_arch(self):
+        elf_arch = self.elffile["e_machine"]
+
+        if elf_arch == "EM_ARM":
+            return ArmArch()
+        else:
+            return BaseArch()
 
     def update_backend(self, backend):
+        arch = self.get_arch()
+
         with backend.db:
             # TODO: use sections if no segments
             self._load_segments_as_sections(backend)
@@ -34,18 +47,21 @@ class Elf:
                 size = max(sym["st_size"], 1)
                 sym_end = sym_addr + size
 
-                backend.symbols.add(sym_addr, sym_end, name=sym.name)
+                backend_obj = Range(sym_addr, sym_end, name=sym.name)
+                arch.hook_load_symbol(backend_obj)
+
+                backend.symbols.add_obj(backend_obj)
 
                 if sym["st_info"]["type"] == "STT_FUNC":
                     overlaps = list(backend.functions.iter_where_overlaps(
-                        sym_addr, sym_end))
+                        backend_obj.start, backend_obj.end))
                     if overlaps:
                         print(
-                            f"not adding {sym.name}, it overlaps with"
+                            f"not adding {backend_obj.name}, it overlaps with"
                             f" {', '.join(other.name for other in overlaps)}",
                             file=sys.stderr)
                     else:
-                        backend.functions.add(sym_addr, sym_end, name=sym.name)
+                        backend.functions.add_obj(backend_obj)
 
     def _load_segments_as_sections(self, backend):
         for segment in self.elffile.iter_segments():
