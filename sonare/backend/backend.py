@@ -226,6 +226,51 @@ class AssemblyLinesTable(RangeTable):
         super().__init__(db, "lines", allow_overlaps=False)
 
 
+class ConfigTable:
+    def __init__(self, db):
+        self.db = db
+        self.name = "config"
+        self.autocreate()
+
+    def autocreate(self):
+        self.db.execute(f"""
+            CREATE TABLE IF NOT EXISTS {self.name} (
+                key text,
+                value text,
+                PRIMARY KEY (key)
+            )
+            """)
+
+    def __getitem__(self, k):
+        cur = self.db.execute(
+            f"SELECT value FROM {self.name} WHERE key = ?",
+            (k, ))
+        row = cur.fetchone()
+        if row is None:
+            raise KeyError(k)
+
+        return row[0]
+
+    def __setitem__(self, k, v):
+        self.db.execute(
+            f"INSERT OR REPLACE INTO {self.name}(key, value) VALUES (?, ?)",
+            (k, v))
+
+    def __delitem__(self, k):
+        cur = self.db.cursor()
+        cur.execute(
+            f"DELETE FROM {self.name} WHERE key = ?",
+            (k, ))
+        if cur.rowcount == 0:
+            raise KeyError(k)
+
+    def get(self, k, default=None):
+        try:
+            return self[k]
+        except KeyError:
+            return default
+
+
 class Backend:
     def __init__(self, filename=None):
         self.filename = filename
@@ -236,6 +281,7 @@ class Backend:
 
         self.buf_mgr = BufferManager(self.buf_dir)
 
+        self.config = ConfigTable(self.db)
         self.sections = SectionTable(self.db, self.buf_mgr)
         self.symbols = RangeTable(self.db, "symbols")
         self.functions = RangeTable(self.db, "functions", allow_overlaps=False)
