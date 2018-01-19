@@ -221,6 +221,11 @@ class SectionTable(RangeTable):
             self.buf_mgr.add(start, data)
 
 
+class AssemblyLinesTable(RangeTable):
+    def __init__(self, db):
+        super().__init__(db, "lines", allow_overlaps=False)
+
+
 class Backend:
     def __init__(self, filename=None):
         self.filename = filename
@@ -234,6 +239,7 @@ class Backend:
         self.sections = SectionTable(self.db, self.buf_mgr)
         self.symbols = RangeTable(self.db, "symbols")
         self.functions = RangeTable(self.db, "functions", allow_overlaps=False)
+        self.asm_lines = AssemblyLinesTable(self.db)
 
     @property
     def _sqlite_path(self):
