@@ -10,20 +10,21 @@ class Elf:
     def __init__(self, filename):
         self.fileobj = open(filename, "rb")
         self.elffile = ELFFile(self.fileobj)
-        self.arch = self.get_arch()
 
-    def get_arch(self):
+    def get_arch_name(self):
         elf_arch = self.elffile["e_machine"]
 
         if elf_arch == "EM_ARM":
-            return ArmArch()
+            return "Arm"
         else:
-            return BaseArch()
+            return None
 
     def update_backend(self, backend):
-        arch = self.get_arch()
-
         with backend.db:
+            backend.config["arch"] = self.get_arch_name()
+
+            arch = backend.get_arch()
+
             # TODO: use sections if no segments
             self._load_segments_as_sections(backend)
 
