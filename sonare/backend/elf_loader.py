@@ -1,7 +1,7 @@
 import sys
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
-from elftools.elf.constants import SH_FLAGS
+from elftools.elf.constants import SH_FLAGS, P_FLAGS
 
 
 class Elf:
@@ -11,14 +11,8 @@ class Elf:
 
     def update_backend(self, backend):
         with backend.db:
-            # TODO: use segments if no sections
-            for section in self.elffile.iter_sections():
-                if section["sh_flags"] & SH_FLAGS.SHF_ALLOC:
-                    name = section.name
-                    addr = section["sh_addr"]
-                    data = section.data()
-
-                    backend.sections.add(addr, data, name=name)
+            # TODO: use sections if no segments
+            self._load_segments_as_sections(backend)
 
             for sym in self.iter_symbols():
                 if not sym.name:
@@ -29,9 +23,11 @@ class Elf:
                 if isinstance(section_index, str):
                     continue
 
-                section = self.elffile.get_section(section_index)
-                section_addr = section["sh_addr"]
-                sym_addr = section_addr + sym["st_value"]
+                sym_addr = sym["st_value"]
+                # TODO: for relocatable files, add section_addr to sym_addr
+                # section = self.elffile.get_section(section_index)
+                # section_addr = section["sh_addr"]
+                # sym_addr += section_addr
 
                 # don't allow zero-length symbols, otherwise range doesn't
                 # include anything
@@ -50,6 +46,22 @@ class Elf:
                             file=sys.stderr)
                     else:
                         backend.functions.add(sym_addr, sym_end, name=sym.name)
+
+    def _load_segments_as_sections(self, backend):
+        for segment in self.elffile.iter_segments():
+            if segment["p_type"] == "PT_LOAD":
+                addr = segment["p_vaddr"]
+                data = segment.data()
+                backend.sections.add(addr, data)
+
+    def _load_sections_as_sections(self, backend):
+        for section in self.elffile.iter_sections():
+            if section["sh_flags"] & SH_FLAGS.SHF_ALLOC:
+                name = section.name
+                addr = section["sh_addr"]
+                data = section.data()
+
+                backend.sections.add(addr, data, name=name)
 
     def iter_symbols(self):
         for section in self.elffile.iter_sections():
