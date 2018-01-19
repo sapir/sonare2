@@ -41,7 +41,7 @@ class Elf:
                         sym_addr, sym_end))
                     if overlaps:
                         print(
-                            f"not adding {name}, it overlaps with"
+                            f"not adding {sym.name}, it overlaps with"
                             f" {', '.join(other.name for other in overlaps)}",
                             file=sys.stderr)
                     else:
