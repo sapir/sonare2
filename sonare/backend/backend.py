@@ -91,7 +91,7 @@ class RangeTable:
             """)
 
         self.db.execute(f"""
-            CREATE {unique_str} INDEX IF NOT EXISTS {self.name}_name_idx
+            CREATE UNIQUE INDEX IF NOT EXISTS {self.name}_name_idx
             ON {self.name} (name)
             """)
 
