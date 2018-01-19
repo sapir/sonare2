@@ -1,3 +1,4 @@
+import capstone
 from .base import BaseArch
 
 
@@ -8,3 +9,10 @@ class ArmArch(BaseArch):
             sym.start -= 1
             sym.end -= 1
             sym.attrs["mode"] = "thumb"
+
+    def make_disasm(self, mode=None):
+        cs_mode = capstone.CS_MODE_LITTLE_ENDIAN
+        if mode == "thumb":
+            cs_mode |= capstone.CS_MODE_THUMB
+
+        return capstone.Cs(capstone.CS_ARCH_ARM, cs_mode)
