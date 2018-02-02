@@ -4,14 +4,12 @@ import capstone
 def analyze_func(backend, func):
     print(f"analyzing {func.name} @ {func.start:#x}, size {func.size:#x}")
     arch = backend.get_arch()
-    disasm = arch.make_disasm(func.attrs.get("mode"))
-
-    func_bytes = backend.buf_mgr.get_bytes(func.start, func.size)
-    for insn in disasm.disasm(func_bytes, func.start):
+    func_mode = func.attrs.get("mode")
+    for opcode in arch.analyze_opcodes(func.start, func.end, mode=func_mode):
         backend.asm_lines.add(
-            insn.address,
-            insn.address + insn.size,
-            text=f"{insn.insn_name()} {insn.op_str}")
+            opcode["address"],
+            opcode["address"] + opcode["size"],
+            text=opcode["text"])
 
 
 def analyze_all(backend):

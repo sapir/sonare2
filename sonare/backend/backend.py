@@ -312,4 +312,4 @@ class Backend:
         if arch_name is not None:
             assert cls.__name__.startswith(arch_name)
 
-        return cls()
+        return cls(self)
