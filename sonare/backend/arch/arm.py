@@ -16,6 +16,8 @@ class ArmArch(BaseArch):
         "invalid reg cimm pimm imm fp mem setend",
         start=0)
 
+    SetEndOperand = Enum("SetEndOperand", "invalid be le", start=0)
+
     def __init__(self, backend):
         super().__init__(backend)
 
@@ -72,26 +74,30 @@ class ArmArch(BaseArch):
     def _operand_to_dict(insn, op):
         d = {}
 
-        d["type"] = ArmArch.OperandType(op.type).name
-
         if op.type == ARM_OP_REG:
+            d["type"] = "reg"
             d["reg"] = ArmArch._get_reg_name(insn, op.reg)
 
         if op.type in (ARM_OP_IMM, ARM_OP_PIMM, ARM_OP_CIMM):
+            d["type"] = "imm"
             d["imm"] = op.imm
 
         if op.type == ARM_OP_FP:
-            d["fp"] = op.fp
+            # TODO: convert this to a standard representation
+            d["type"] = "special"
+            d["value"] = op.fp
 
         if op.type == ARM_OP_SYSREG:
-            # TODO: merge with reg
-            d["sysreg"] = op.reg
+            d["type"] = "reg"
+            # TODO: is this a string? probably not?
+            d["reg"] = op.reg
 
         if op.type == ARM_OP_SETEND:
-            # TODO: string type
-            d["setend"] = op.setend  # ARM_SETEND_BE, ARM_SETEND_LE
+            d["type"] = "special"
+            d["value"] = ArmArch.SetEndOperand(op.setend).name
 
         if op.type == ARM_OP_MEM:
+            d["type"] = "mem"
             d["base"] = ArmArch._get_reg_name(insn, op.mem.base)
             d["index"] = ArmArch._get_reg_name(insn, op.mem.index)
             d["scale"] = op.mem.scale
@@ -103,9 +109,11 @@ class ArmArch(BaseArch):
                 "value": op.shift.value,
             }
 
+        # TODO: convert this to a standard representation?
         if op.vector_index != -1:
             d["vector_index"] = op.vector_index
 
+        # TODO: convert this to a standard representation?
         d["subtracted"] = op.subtracted
 
         return d
