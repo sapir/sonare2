@@ -1,7 +1,8 @@
+import re
 import capstone
 from capstone.arm_const import *
 from enum import Enum
-from .base import BaseArch
+from .base import BaseArch, TokenWriter
 
 
 class ArmArch(BaseArch):
@@ -105,6 +106,34 @@ class ArmArch(BaseArch):
 
         return d
 
+    def _analyze_insn_tokens(self, insn, cc_str, operands, simple_text):
+        tw = TokenWriter()
+
+        tw.add("mnemonic", insn.insn_name())
+
+        if cc_str:
+            tw.add("mnemonic_suffix", cc_str)
+
+        tw.write(" ")
+
+        # parse op_str
+        op_idx = 0
+        for m in re.finditer(
+                # '{' signifies a register list except for printCoprocOptionImm
+                r"([ \t,]+)|\[[^]]*\]|\{[0-9][^}]*\}|[^,]+", insn.op_str):
+
+            if m.group(1):
+                tw.write(m.group(1))
+            else:
+                tw.add("operand", m.group(), index=op_idx)
+                op_idx += 1
+
+        assert len([t for t in tw.tokens
+                    if t["type"] == "operand"]) == len(operands), tw.tokens
+        assert ''.join(t["string"] for t in tw.tokens) == simple_text
+
+        return tw.tokens
+
     def analyze_opcodes(self, start, end, mode=None):
         cs_mode = self._get_capstone_mode(mode)
 
@@ -119,11 +148,17 @@ class ArmArch(BaseArch):
                 for op in insn.operands
             ]
 
+            simple_text = f"{insn.insn_name()}{cc_str} {insn.op_str}"
+
+            tokens = self._analyze_insn_tokens(
+                insn, cc_str, operands, simple_text)
+
             yield {
                 "address": insn.address,
                 "size": insn.size,
                 "insn_id": insn.id,
                 "operands": operands,
+                "tokens": tokens,
                 "flow": flow,
-                "text": f"{insn.insn_name()}{cc_str} {insn.op_str}",
+                "text": simple_text,
             }

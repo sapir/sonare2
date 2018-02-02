@@ -12,6 +12,7 @@ def analyze_func(backend, func):
             text=opcode["text"],
             flow=opcode["flow"],
             operands=opcode["operands"],
+            tokens=opcode["tokens"],
         )
 
 

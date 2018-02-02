@@ -1,3 +1,23 @@
+class TokenWriter(object):
+    def __init__(self):
+        self.tokens = []
+
+    def add(self, type_, string, **attrs):
+        # merge syntax tokens
+        if (type_ == "syntax" and not attrs and
+                self.tokens and self.tokens[-1]["type"] == "syntax"):
+
+            self.tokens[-1]["string"] += string
+
+        else:
+            t = {"type": type_, "string": string}
+            t.update(attrs)
+            self.tokens.append(t)
+
+    def write(self, string):
+        self.add("syntax", string)
+
+
 class BaseArch:
     def __init__(self, backend):
         self.backend = backend
