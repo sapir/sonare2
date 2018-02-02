@@ -28,6 +28,19 @@ class Sonare2WebServer(object):
     def names(self):
         return list(map(range_to_dict, self.backend.names.iter_by_name()))
 
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
+    def func(self, name):
+        func = self.backend.functions.get_by_name(name)
+
+        d = range_to_dict(func)
+        d["asm_lines"] = list(map(
+            range_to_dict,
+            self.backend.asm_lines.iter_where_overlaps(
+                func.start, func.start + func.size)))
+
+        return d
+
 
 if __name__ == '__main__':
     static_path = os.path.abspath(os.path.join(

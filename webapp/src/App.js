@@ -8,6 +8,7 @@ class App extends Component {
     super(props);
     this.state = {
       names: null,
+      func: null,
     };
   }
 
@@ -17,8 +18,17 @@ class App extends Component {
 
   async reloadNames() {
     const response = await fetch("/api/names");
+    const names = await response.json();
+    this.setState({names: names});
+    if (names) {
+      this.loadGraph(names[0].name);
+    }
+  }
+
+  async loadGraph(funcName) {
+    const response = await fetch(`/api/func/${funcName}`);
     const json = await response.json();
-    this.setState({names: json});
+    this.setState({func: json});
   }
 
   render() {
@@ -38,7 +48,13 @@ class App extends Component {
 
           <Sidebar.Pusher>
             <Segment className="main-content" vertical>
-              disassembly goes here
+              {this.state.func && (
+                _.map(this.state.func.asm_lines, asm_line => (
+                  <div key={asm_line.start}>
+                    {asm_line.text}
+                  </div>
+                ))
+              )}
             </Segment>
           </Sidebar.Pusher>
         </Sidebar.Pushable>
