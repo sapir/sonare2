@@ -25,7 +25,7 @@ class App extends Component {
     return (
       <div className="App">
         <Sidebar.Pushable as={Segment}>
-          <Sidebar as={Segment} animation='push' width='thin' visible={true} icon='labeled' inverted vertical>
+          <Sidebar as={Segment} animation='push' width='wide' visible={true} icon='labeled' inverted vertical>
             <Header as="h3">Names</Header>
             <List>
               {_.map(this.state.names, name => (
