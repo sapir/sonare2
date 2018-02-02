@@ -133,14 +133,56 @@ class ArmArch(BaseArch):
         for m in re.finditer(
                 r"([ \t,{}]+)|\[[^]]*\]|[^ \t,{}]+", insn.op_str):
 
+            insn_part = m.group()
             if m.group(1):
-                tw.write(m.group(1))
+                tw.write(insn_part)
             else:
-                tw.add("operand", m.group(), index=op_idx)
+                operand = operands[op_idx]
+
+                # parse mem operands
+                if operand["type"] == "mem":
+                    assert insn_part.startswith("[")
+                    assert insn_part.endswith("]")
+
+                    op_parts = insn_part[1:-1].split(", ")
+
+                    tw.write("[")
+
+                    # TODO: can this be None?
+                    part_types = [
+                        part_type for part_type in ("base", "index", "disp")
+                        if operand[part_type]
+                    ]
+
+                    assert len(part_types) == len(op_parts), (
+                        operand, part_types, op_parts)
+
+                    for i, (op_part, part_type) in enumerate(
+                            zip(op_parts, part_types)):
+
+                        if i > 0:
+                            tw.write(", ")
+
+                        tw.add(
+                            "operand",
+                            op_part,
+                            index=op_idx,
+                            part_idx=i,
+                            part_type=part_type,
+                        )
+
+                    tw.write("]")
+                else:
+                    tw.add(
+                        "operand",
+                        m.group(),
+                        index=op_idx,
+                        part_idx=0,
+                        part_type="full",
+                    )
+
                 op_idx += 1
 
-        assert len([t for t in tw.tokens
-                    if t["type"] == "operand"]) == len(operands), tw.tokens
         assert ''.join(t["string"] for t in tw.tokens) == simple_text
 
         return tw.tokens
