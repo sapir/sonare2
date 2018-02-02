@@ -11,6 +11,11 @@ class ArmArch(BaseArch):
         "invalid eq ne hs lo mi pl vs vc hi ls ge lt gt le al",
         start=0)
 
+    OperandType = Enum(
+        "OperandType",
+        "invalid reg cimm pimm imm fp mem setend",
+        start=0)
+
     def __init__(self, backend):
         super().__init__(backend)
 
@@ -67,8 +72,7 @@ class ArmArch(BaseArch):
     def _operand_to_dict(insn, op):
         d = {}
 
-        # TODO: string type
-        d["type"] = op.type
+        d["type"] = ArmArch.OperandType(op.type).name
 
         if op.type == ARM_OP_REG:
             d["reg"] = ArmArch._get_reg_name(insn, op.reg)
