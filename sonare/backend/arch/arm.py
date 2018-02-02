@@ -1,8 +1,14 @@
 import capstone
+from enum import Enum
 from .base import BaseArch
 
 
 class ArmArch(BaseArch):
+    ConditionCode = Enum(
+        "ConditionCode",
+        "invalid eq ne hs lo mi pl vs vc hi ls ge lt gt le al",
+        start=0)
+
     def __init__(self, backend):
         super().__init__(backend)
 
@@ -28,9 +34,12 @@ class ArmArch(BaseArch):
         cs_mode = self._get_capstone_mode(mode)
 
         for insn in self._disassemble(self.cs, cs_mode, start, end):
+            cc = ArmArch.ConditionCode(insn.cc)
+            cc_str = "" if cc == ArmArch.ConditionCode.al else cc.name
+
             yield {
                 "address": insn.address,
                 "size": insn.size,
                 "insn_id": insn.id,
-                "text": f"{insn.insn_name()} {insn.op_str}",
+                "text": f"{insn.insn_name()}{cc_str} {insn.op_str}",
             }
