@@ -1,4 +1,5 @@
 import capstone
+from capstone.arm_const import *
 from enum import Enum
 from .base import BaseArch
 
@@ -30,6 +31,30 @@ class ArmArch(BaseArch):
 
         return cs_mode
 
+    def _analyze_flow(self, insn, cc):
+        if insn.id in [ARM_INS_B]:
+            # flow continues to operand
+            is_branch = True
+            branch_target = insn.operands[0].imm
+        elif insn.id in [ARM_INS_BX, ARM_INS_BXJ]:
+            # flow continues to register (a tailcall or return)
+            is_branch = True
+            branch_target = None  # unknown
+        else:
+            is_branch = False
+
+        is_cond = (cc != ArmArch.ConditionCode.al)
+
+        flow = []
+        if is_branch and branch_target:
+            flow.append(branch_target)
+
+        if not is_branch or is_cond:
+            next_addr = insn.address + insn.size
+            flow.append(next_addr)
+
+        return flow
+
     def analyze_opcodes(self, start, end, mode=None):
         cs_mode = self._get_capstone_mode(mode)
 
@@ -37,9 +62,12 @@ class ArmArch(BaseArch):
             cc = ArmArch.ConditionCode(insn.cc)
             cc_str = "" if cc == ArmArch.ConditionCode.al else cc.name
 
+            flow = self._analyze_flow(insn, cc)
+
             yield {
                 "address": insn.address,
                 "size": insn.size,
                 "insn_id": insn.id,
+                "flow": flow,
                 "text": f"{insn.insn_name()}{cc_str} {insn.op_str}",
             }

@@ -9,7 +9,8 @@ def analyze_func(backend, func):
         backend.asm_lines.add(
             opcode["address"],
             opcode["address"] + opcode["size"],
-            text=opcode["text"])
+            text=opcode["text"],
+            flow=opcode["flow"])
 
 
 def analyze_all(backend):
