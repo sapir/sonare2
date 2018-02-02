@@ -55,6 +55,56 @@ class ArmArch(BaseArch):
 
         return flow
 
+    @staticmethod
+    def _get_reg_name(insn, reg):
+        if reg == 0:
+            return None
+        else:
+            return insn.reg_name(reg)
+
+    @staticmethod
+    def _operand_to_dict(insn, op):
+        d = {}
+
+        # TODO: string type
+        d["type"] = op.type
+
+        if op.type == ARM_OP_REG:
+            d["reg"] = ArmArch._get_reg_name(insn, op.reg)
+
+        if op.type in (ARM_OP_IMM, ARM_OP_PIMM, ARM_OP_CIMM):
+            d["imm"] = op.imm
+
+        if op.type == ARM_OP_FP:
+            d["fp"] = op.fp
+
+        if op.type == ARM_OP_SYSREG:
+            # TODO: merge with reg
+            d["sysreg"] = op.reg
+
+        if op.type == ARM_OP_SETEND:
+            # TODO: string type
+            d["setend"] = op.setend  # ARM_SETEND_BE, ARM_SETEND_LE
+
+        if op.type == ARM_OP_MEM:
+            d["base"] = ArmArch._get_reg_name(insn, op.mem.base)
+            d["index"] = ArmArch._get_reg_name(insn, op.mem.index)
+            d["scale"] = op.mem.scale
+            d["disp"] = op.mem.disp
+
+        if op.shift.type != ARM_SFT_INVALID and op.shift.value:
+            d["shift"] = {
+                "type": op.shift.type,
+                "value": op.shift.value,
+            }
+
+        if op.vector_index != -1:
+            d["vector_index"] = op.vector_index
+
+        d["subtracted"] = op.subtracted
+
+        return d
+
     def analyze_opcodes(self, start, end, mode=None):
         cs_mode = self._get_capstone_mode(mode)
 
@@ -64,10 +114,16 @@ class ArmArch(BaseArch):
 
             flow = self._analyze_flow(insn, cc)
 
+            operands = [
+                self._operand_to_dict(insn, op)
+                for op in insn.operands
+            ]
+
             yield {
                 "address": insn.address,
                 "size": insn.size,
                 "insn_id": insn.id,
+                "operands": operands,
                 "flow": flow,
                 "text": f"{insn.insn_name()}{cc_str} {insn.op_str}",
             }

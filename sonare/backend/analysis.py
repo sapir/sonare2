@@ -10,7 +10,9 @@ def analyze_func(backend, func):
             opcode["address"],
             opcode["address"] + opcode["size"],
             text=opcode["text"],
-            flow=opcode["flow"])
+            flow=opcode["flow"],
+            operands=opcode["operands"],
+        )
 
 
 def analyze_all(backend):
