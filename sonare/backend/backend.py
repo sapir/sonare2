@@ -1,5 +1,6 @@
 import sqlite3
 import json
+from threading import RLock
 from .buf_mgr import BufferManager
 from .arch import BaseArch, ArmArch
 
@@ -58,6 +59,8 @@ class RangeTable:
 
     def __init__(self, db, name, allow_overlaps=True):
         self.db = db
+        self.write_lock = RLock()
+
         self.name = name
 
         self.allow_overlaps = allow_overlaps
@@ -68,33 +71,34 @@ class RangeTable:
         return f"<RangeTable {self.name!r}>"
 
     def autocreate(self):
-        self.db.execute(f"""
-            CREATE TABLE IF NOT EXISTS {self.name} (
-                id int,
-                start int,
-                end int,
-                name text,
-                attrs json,
-                PRIMARY KEY (id)
-            )
-            """)
+        with self.write_lock:
+            self.db.execute(f"""
+                CREATE TABLE IF NOT EXISTS {self.name} (
+                    id int,
+                    start int,
+                    end int,
+                    name text,
+                    attrs json,
+                    PRIMARY KEY (id)
+                )
+                """)
 
-        unique_str = "" if self.allow_overlaps else "UNIQUE"
+            unique_str = "" if self.allow_overlaps else "UNIQUE"
 
-        self.db.execute(f"""
-            CREATE {unique_str} INDEX IF NOT EXISTS {self.name}_start_idx
-            ON {self.name} (start)
-            """)
+            self.db.execute(f"""
+                CREATE {unique_str} INDEX IF NOT EXISTS {self.name}_start_idx
+                ON {self.name} (start)
+                """)
 
-        self.db.execute(f"""
-            CREATE {unique_str} INDEX IF NOT EXISTS {self.name}_end_idx
-            ON {self.name} (end)
-            """)
+            self.db.execute(f"""
+                CREATE {unique_str} INDEX IF NOT EXISTS {self.name}_end_idx
+                ON {self.name} (end)
+                """)
 
-        self.db.execute(f"""
-            CREATE UNIQUE INDEX IF NOT EXISTS {self.name}_name_idx
-            ON {self.name} (name)
-            """)
+            self.db.execute(f"""
+                CREATE UNIQUE INDEX IF NOT EXISTS {self.name}_name_idx
+                ON {self.name} (name)
+                """)
 
     def _query_first(self, *args):
         cur = self.db.cursor()
@@ -156,13 +160,14 @@ class RangeTable:
                     f"{start:#x}-{end:#x} (name={name!r})"
                     f" overlaps with: {overlaps!r}")
 
-        cur = self.db.cursor()
-        cur.execute(
-            f"""
-            INSERT INTO {self.name}(start, end, name, attrs)
-            VALUES(?, ?, ?, json(?))
-            """,
-            (start, end, name, kwargs))
+        with self.write_lock:
+            cur = self.db.cursor()
+            cur.execute(
+                f"""
+                INSERT INTO {self.name}(start, end, name, attrs)
+                VALUES(?, ?, ?, json(?))
+                """,
+                (start, end, name, kwargs))
 
     def add_obj(self, range_obj):
         return self.add(
@@ -214,7 +219,7 @@ class SectionTable(RangeTable):
                 self.buf_mgr.load(section.start)
 
     def add(self, start, data, **kwargs):
-        with self.db:
+        with self.write_lock, self.db:
             end = start + len(data)
 
             super().add(start, end, **kwargs)
@@ -230,17 +235,21 @@ class AssemblyLinesTable(RangeTable):
 class ConfigTable:
     def __init__(self, db):
         self.db = db
+        self.write_lock = RLock()
+
         self.name = "config"
+
         self.autocreate()
 
     def autocreate(self):
-        self.db.execute(f"""
-            CREATE TABLE IF NOT EXISTS {self.name} (
-                key text,
-                value text,
-                PRIMARY KEY (key)
-            )
-            """)
+        with self.write_lock:
+            self.db.execute(f"""
+                CREATE TABLE IF NOT EXISTS {self.name} (
+                    key text,
+                    value text,
+                    PRIMARY KEY (key)
+                )
+                """)
 
     def __getitem__(self, k):
         cur = self.db.execute(
@@ -253,17 +262,20 @@ class ConfigTable:
         return row[0]
 
     def __setitem__(self, k, v):
-        self.db.execute(
-            f"INSERT OR REPLACE INTO {self.name}(key, value) VALUES (?, ?)",
-            (k, v))
+        with self.write_lock:
+            self.db.execute(
+                f"INSERT OR REPLACE INTO {self.name}(key, value)"
+                f" VALUES (?, ?)",
+                (k, v))
 
     def __delitem__(self, k):
-        cur = self.db.cursor()
-        cur.execute(
-            f"DELETE FROM {self.name} WHERE key = ?",
-            (k, ))
-        if cur.rowcount == 0:
-            raise KeyError(k)
+        with self.write_lock:
+            cur = self.db.cursor()
+            cur.execute(
+                f"DELETE FROM {self.name} WHERE key = ?",
+                (k, ))
+            if cur.rowcount == 0:
+                raise KeyError(k)
 
     def get(self, k, default=None):
         try:
@@ -278,7 +290,8 @@ class Backend:
 
         self.db = sqlite3.connect(
             self._sqlite_path,
-            detect_types=sqlite3.PARSE_DECLTYPES)
+            detect_types=sqlite3.PARSE_DECLTYPES,
+            check_same_thread=False)
 
         self.buf_mgr = BufferManager(self.buf_dir)
 
