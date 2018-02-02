@@ -123,8 +123,7 @@ class ArmArch(BaseArch):
         # parse op_str
         op_idx = 0
         for m in re.finditer(
-                # '{' signifies a register list except for printCoprocOptionImm
-                r"([ \t,]+)|\[[^]]*\]|\{[0-9][^}]*\}|[^,]+", insn.op_str):
+                r"([ \t,{}]+)|\[[^]]*\]|[^ \t,{}]+", insn.op_str):
 
             if m.group(1):
                 tw.write(m.group(1))
