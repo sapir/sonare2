@@ -157,6 +157,7 @@ class ArmArch(BaseArch):
                 "address": insn.address,
                 "size": insn.size,
                 "insn_id": insn.id,
+                "insn_name": insn.insn_name() + cc_str,
                 "operands": operands,
                 "tokens": tokens,
                 "flow": flow,
