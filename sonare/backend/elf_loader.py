@@ -51,7 +51,7 @@ class Elf:
                 backend_obj = Range(sym_addr, sym_end, name=sym.name)
                 arch.hook_load_symbol(backend_obj)
 
-                backend.aliases.add_obj(backend_obj)
+                backend.names.add_obj(backend_obj)
 
                 if sym["st_info"]["type"] == "STT_FUNC":
                     overlaps = list(backend.functions.iter_where_overlaps(

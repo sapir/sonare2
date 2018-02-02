@@ -297,7 +297,7 @@ class Backend:
 
         self.config = ConfigTable(self.db)
         self.sections = SectionTable(self.db, self.buf_mgr)
-        self.aliases = RangeTable(self.db, "aliases")
+        self.names = RangeTable(self.db, "names")
         self.functions = RangeTable(self.db, "functions", allow_overlaps=False)
         self.asm_lines = AssemblyLinesTable(self.db)
 
