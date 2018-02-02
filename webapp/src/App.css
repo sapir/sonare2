@@ -5,3 +5,19 @@
 .main-content {
   height: 100%;
 }
+
+.token-mnemonic {
+    color: blue;
+}
+
+.token-mnemonic-suffix {
+    color: lightblue;
+}
+
+.token-syntax {
+    color: grey;
+}
+
+.token-operand {
+    color: red;
+}

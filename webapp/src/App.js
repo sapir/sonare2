@@ -31,6 +31,24 @@ class App extends Component {
     this.setState({func: json});
   }
 
+  renderAsmToken(token, i) {
+    const className = `token-${token.type}`;
+
+    return (
+      <span key={i} className={className}>
+        {token.string}
+      </span>
+    );
+  }
+
+  renderAsmLine(asmLine) {
+    return (
+      <div key={asmLine.start}>
+        {_.map(asmLine.tokens, (token, i) => this.renderAsmToken(token, i))}
+      </div>
+    );
+  }
+
   render() {
     return (
       <div className="App">
@@ -49,11 +67,8 @@ class App extends Component {
           <Sidebar.Pusher>
             <Segment className="main-content" vertical>
               {this.state.func && (
-                _.map(this.state.func.asm_lines, asm_line => (
-                  <div key={asm_line.start}>
-                    {asm_line.text}
-                  </div>
-                ))
+                _.map(this.state.func.asm_lines, asmLine =>
+                  this.renderAsmLine(asmLine))
               )}
             </Segment>
           </Sidebar.Pusher>
