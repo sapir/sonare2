@@ -17,7 +17,7 @@ class App extends Component {
           </Sidebar>
 
           <Sidebar.Pusher>
-            <Segment basic>
+            <Segment className="main-content" vertical>
               disassembly goes here
             </Segment>
           </Sidebar.Pusher>
