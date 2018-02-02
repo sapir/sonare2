@@ -15,4 +15,6 @@ class ArmArch(BaseArch):
         if mode == "thumb":
             cs_mode |= capstone.CS_MODE_THUMB
 
-        return capstone.Cs(capstone.CS_ARCH_ARM, cs_mode)
+        cs = capstone.Cs(capstone.CS_ARCH_ARM, cs_mode)
+        cs.detail = True
+        return cs
