@@ -26,7 +26,10 @@ class Range:
     Ranges include the start address but not the end address.
     """
 
-    def __init__(self, start, end=None, name=None, attrs=None, size=None):
+    def __init__(self, start, end=None, name=None, attrs=None, size=None,
+                 id_=None):
+
+        self.id_ = id_
         self.start = start
         self.attrs = {} if attrs is None else attrs
 
@@ -106,7 +109,7 @@ class RangeTable:
         return cur.fetchone()
 
     def _row_to_obj(self, row):
-        return Range(*row[1:])
+        return Range(*row[1:], id_=row[0])
 
     def _query_first_obj(self, *args):
         row = self._query_first(*args)
