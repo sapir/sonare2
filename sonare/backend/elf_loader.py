@@ -62,7 +62,8 @@ class Elf:
                             f" {', '.join(other.name for other in overlaps)}",
                             file=sys.stderr)
                     else:
-                        backend.functions.add_obj(backend_obj)
+                        func_obj = backend_obj.copy_new()
+                        backend.functions.add_obj(func_obj)
 
     def _load_segments_as_sections(self, backend):
         for segment in self.elffile.iter_segments():

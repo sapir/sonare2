@@ -54,6 +54,10 @@ class Range:
     def __contains__(self, addr):
         return self.start <= addr < self.end
 
+    def copy_new(self):
+        """makes a copy without the id_."""
+        return Range(self.start, self.end, self.name, self.attrs)
+
 
 class RangeTable:
     """
