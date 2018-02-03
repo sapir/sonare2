@@ -74,9 +74,9 @@ class RangeTable:
         with self.write_lock:
             self.db.execute(f"""
                 CREATE TABLE IF NOT EXISTS {self.name} (
-                    id int,
-                    start int,
-                    end int,
+                    id integer,
+                    start integer,
+                    end integer,
                     name text,
                     attrs json,
                     PRIMARY KEY (id)
