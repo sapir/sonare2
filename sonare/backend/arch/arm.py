@@ -40,18 +40,26 @@ class ArmArch(BaseArch):
         return cs_mode
 
     def _analyze_flow(self, insn, cc, operands):
+        # is opcode conditional (may also be True for certain branch types)
+        is_cond = (cc != ArmArch.ConditionCode.al)
+
         if insn.id in [ARM_INS_B]:
             # flow continues to operand
             is_branch = True
             branch_target = insn.operands[0].imm
+
+        elif insn.id in [ARM_INS_CBZ, ARM_INS_CBNZ]:
+            is_branch = True
+            is_cond = True
+            branch_target = insn.operands[1].imm
+
         elif insn.id in [ARM_INS_BX, ARM_INS_BXJ]:
             # flow continues to register (a tailcall or return)
             is_branch = True
             branch_target = None  # unknown
+
         else:
             is_branch = False
-
-        is_cond = (cc != ArmArch.ConditionCode.al)
 
         is_ret = (
             insn.id == ARM_INS_POP and
