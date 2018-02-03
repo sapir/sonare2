@@ -172,12 +172,22 @@ class RangeTable:
                 """,
                 (start, end, name, kwargs))
 
+            return cur.lastrowid
+
     def add_obj(self, range_obj):
-        return self.add(
+        """adds object to DB and fills in range_obj.id_."""
+
+        assert range_obj.id_ is None
+
+        id_ = self.add(
             range_obj.start,
             range_obj.end,
             range_obj.name,
             **range_obj.attrs)
+
+        range_obj.id_ = id_
+
+        return id_
 
     def __len__(self):
         return self._query_first(f"SELECT COUNT(*) FROM {self.name}")[0]
