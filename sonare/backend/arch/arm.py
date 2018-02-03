@@ -39,7 +39,7 @@ class ArmArch(BaseArch):
 
         return cs_mode
 
-    def _analyze_flow(self, insn, cc):
+    def _analyze_flow(self, insn, cc, operands):
         if insn.id in [ARM_INS_B]:
             # flow continues to operand
             is_branch = True
@@ -53,11 +53,17 @@ class ArmArch(BaseArch):
 
         is_cond = (cc != ArmArch.ConditionCode.al)
 
+        is_ret = (
+            insn.id == ARM_INS_POP and
+            any(op["type"] == "reg" and op["reg"] == "pc"
+                for op in operands)
+        )
+
         flow = []
         if is_branch and branch_target:
             flow.append(branch_target)
 
-        if not is_branch or is_cond:
+        if not is_ret and (not is_branch or is_cond):
             next_addr = insn.address + insn.size
             flow.append(next_addr)
 
@@ -194,8 +200,6 @@ class ArmArch(BaseArch):
             cc = ArmArch.ConditionCode(insn.cc)
             cc_str = "" if cc == ArmArch.ConditionCode.al else cc.name
 
-            flow = self._analyze_flow(insn, cc)
-
             operands = [
                 self._operand_to_dict(insn, op)
                 for op in insn.operands
@@ -205,6 +209,8 @@ class ArmArch(BaseArch):
 
             tokens = self._analyze_insn_tokens(
                 insn, cc_str, operands, simple_text)
+
+            flow = self._analyze_flow(insn, cc, operands)
 
             yield {
                 "address": insn.address,
