@@ -189,6 +189,20 @@ class RangeTable:
 
         return id_
 
+    def update_obj(self, range_obj):
+        assert range_obj.id_ is not None
+
+        with self.write_lock:
+            cur = self.db.cursor()
+            cur.execute(
+                f"""
+                UPDATE {self.name}
+                SET start=?, end=?, name=?, attrs=json(?)
+                WHERE id=?
+                """,
+                (range_obj.start, range_obj.end, range_obj.name,
+                    range_obj.attrs, range_obj.id_))
+
     def __len__(self):
         return self._query_first(f"SELECT COUNT(*) FROM {self.name}")[0]
 
