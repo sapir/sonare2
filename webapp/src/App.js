@@ -58,7 +58,30 @@ class App extends Component {
     );
   }
 
+  renderBlock(block, asmLinesByAddress) {
+    const asmLines = _.map(
+      block.opcodes, address => asmLinesByAddress[address]);
+
+    return (
+      <div key={block.address}>
+        <h5>Block @ {block.address.toString(16)} -> [{
+          _.map(block.flow, (nextBlock, i) =>
+            <span key={i}>
+              {i > 0 ? ", " : null}
+              {nextBlock.toString(16)}
+            </span>
+        )}]</h5>
+        {_.map(asmLines, asmLine => this.renderAsmLine(asmLine))}
+      </div>
+    );
+  }
+
   render() {
+    const asmLinesByAddress = _.fromPairs(
+      _.map(
+        this.state.func ? this.state.func.asm_lines : [],
+        asmLine => [asmLine.start, asmLine]));
+
     return (
       <div className="App">
         <Sidebar.Pushable as={Segment}>
@@ -76,8 +99,8 @@ class App extends Component {
           <Sidebar.Pusher>
             <Segment className="main-content" vertical>
               {this.state.func && (
-                _.map(this.state.func.asm_lines, asmLine =>
-                  this.renderAsmLine(asmLine))
+                _.map(this.state.func.blocks, block =>
+                  this.renderBlock(block, asmLinesByAddress))
               )}
             </Segment>
           </Sidebar.Pusher>
