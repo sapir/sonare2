@@ -29,8 +29,20 @@ class App extends Component {
 
   async loadGraph(funcName) {
     const response = await fetch(`/api/func/${funcName}`);
-    const json = await response.json();
-    this.setState({func: json});
+    const func = await response.json();
+
+    // fill in block asmLines
+    const asmLinesByAddress = _.fromPairs(
+      _.map(
+        func ? func.asm_lines : [],
+        asmLine => [asmLine.start, asmLine]));
+
+    for (let block of func.blocks) {
+      // TODO: handle asmLines missing from asmLinesByAddress
+      block.asmLines = _.map(block.opcodes, addr => asmLinesByAddress[addr]);
+    }
+
+    this.setState({func: func});
   }
 
   render() {

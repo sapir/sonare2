@@ -4,7 +4,6 @@ import dagre from 'dagre';
 
 
 export default class BlockGraph extends Component {
-
   renderAsmToken(asmLine, token, i) {
     let className = `token-${token.type}`;
 
@@ -32,14 +31,11 @@ export default class BlockGraph extends Component {
     );
   }
 
-  renderBlock(block, asmLinesByAddress) {
-    const asmLines = _.map(
-      block.opcodes, address => asmLinesByAddress[address]);
-
+  renderBlock(block) {
     return (
       <div key={block.address}>
         <h5>Block @ {block.address.toString(16)}</h5>
-        {_.map(asmLines, asmLine => this.renderAsmLine(asmLine))}
+        {_.map(block.asmLines, asmLine => this.renderAsmLine(asmLine))}
       </div>
     );
   }
@@ -47,11 +43,6 @@ export default class BlockGraph extends Component {
   render() {
     if (!this.props.func || !this.props.func.blocks)
       return <div />;
-
-    const asmLinesByAddress = _.fromPairs(
-      _.map(
-        this.props.func ? this.props.func.asm_lines : [],
-        asmLine => [asmLine.start, asmLine]));
 
     const g = new dagre.graphlib.Graph();
     g.setGraph({});
@@ -103,8 +94,7 @@ export default class BlockGraph extends Component {
                   />
 
                 <foreignObject width={width} height={height}>
-                  {this.renderBlock(
-                    blocksByAddress[nodeID], asmLinesByAddress)}
+                  {this.renderBlock(blocksByAddress[nodeID])}
                 </foreignObject>
               </g>
             );
