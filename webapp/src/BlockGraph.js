@@ -44,7 +44,7 @@ export default class BlockGraph extends Component {
     const minY = _.min(_.map(nodeLabels, n => n.y));
 
     // TODO: center graph in viewport instead, enlarge as necessary
-    // move nodes so that top-left is at (0, 0)
+    // move nodes so that top-left is at (0, 0) + margins
     for (let n of nodeLabels) {
       n.x -= minX;
       n.y -= minY;
@@ -101,6 +101,8 @@ export default class BlockGraph extends Component {
 
     return (
       <svg width={graphWidth} height={graphHeight}>
+        <rect width="100%" height="100%" className="background" />
+
         <g>
           {_.map(nodes, nodeID => {
             const node = g.node(nodeID);
@@ -116,8 +118,7 @@ export default class BlockGraph extends Component {
                 <rect
                   width={width}
                   height={height}
-                  fill="#4286f4"
-                  stroke="black"
+                  className="block"
                   />
 
                 <foreignObject width={width} height={height}>

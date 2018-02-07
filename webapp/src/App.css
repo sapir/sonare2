@@ -7,17 +7,40 @@
 }
 
 .token-mnemonic {
-    color: blue;
+    color: #ae81ff;
 }
 
 .token-mnemonic-suffix {
-    color: lightblue;
+    color: #f8f8f2;
 }
 
 .token-syntax {
-    color: grey;
+    color: #f8f8f2;
+}
+
+.token-operand {
+    color: #fd971f;
 }
 
 .token-operand-reg, .token-operand-mem-base {
-    color: red;
+    color: #f92672;
+}
+
+rect.background {
+    fill: #1e1e1e;
+}
+
+rect.block {
+    fill: #272822;
+    stroke: #383830;
+    stroke-width: 1px;
+}
+
+div.block {
+    color: #f8f8f2;
+    margin: 5px;
+}
+
+div.block h5 {
+    color: #75715e;
 }

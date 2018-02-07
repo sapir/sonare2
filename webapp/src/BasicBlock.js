@@ -34,7 +34,7 @@ export default class BasicBlock extends Component {
     const block = this.props.block;
 
     return (
-      <div key={block.address}>
+      <div key={block.address} className="block">
         <h5>Block @ {block.address.toString(16)}</h5>
         {_.map(block.asmLines, asmLine => this.renderAsmLine(asmLine))}
       </div>
