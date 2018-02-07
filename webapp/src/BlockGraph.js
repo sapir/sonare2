@@ -1,13 +1,53 @@
 import _ from 'lodash';
 import React, { Component } from 'react';
+import update from 'immutability-helper';
 import dagre from 'dagre';
+import Measure from 'react-measure';
 import BasicBlock from './BasicBlock';
 
 
 export default class BlockGraph extends Component {
+  constructor(props) {
+    super(props);
+    // TODO: clear blockSizes on props change
+    this.state = {blockSizes: {}};
+  }
+
   render() {
     if (!this.props.func || !this.props.func.blocks)
       return <div />;
+
+    const blocks = this.props.func.blocks;
+    const gotAllSizes = _.every(
+      blocks, block => this.state.blockSizes[block.address]);
+    if (!gotAllSizes) {
+      // render invisible blocks
+      return (
+        <div style={{opacity: 0}}>
+          {_.map(blocks, block => (
+            <div key={block.address}>
+              <Measure
+                bounds
+                onResize={contentRect => {
+                  this.setState({
+                    blockSizes: update(
+                      this.state.blockSizes,
+                      {[block.address]: {$set: contentRect.bounds}}
+                    ),
+                  });
+                }}
+              >
+                {({measureRef}) => (
+                  <div ref={measureRef} style={{display: "inline-block"}}>
+                    <BasicBlock block={block} />
+                  </div>
+                )}
+              </Measure>
+            </div>
+          ))}
+        </div>
+      );
+    }
 
     const g = new dagre.graphlib.Graph();
     g.setGraph({});
@@ -15,13 +55,17 @@ export default class BlockGraph extends Component {
 
     let blocksByAddress = {};
 
-    for (let block of this.props.func.blocks) {
-      blocksByAddress[block.address] = block;
+    for (let block of blocks) {
+      const address = block.address;
 
-      // TODO: width & height
-      g.setNode(block.address, {width: 100, height: 100});
+      blocksByAddress[address] = block;
+
+      // blockSizes actually also contains other stuff, let's not put it in the
+      // node label
+      const {width, height} = this.state.blockSizes[address];
+      g.setNode(address, {width: width, height: height});
       for (let toAddr of block.flow) {
-        g.setEdge(block.address, toAddr);
+        g.setEdge(address, toAddr);
       }
     }
 
@@ -47,10 +91,16 @@ export default class BlockGraph extends Component {
       <svg width={graphWidth} height={graphHeight}>
         <g>
           {_.map(nodes, nodeID => {
-            let node = g.node(nodeID);
-            let {x, y, width, height} = node;
+            const node = g.node(nodeID);
+            const {x, y, width, height} = node;
+
+            const block = blocksByAddress[nodeID];
+
             return (
-              <g key={nodeID} transform={`translate(${x},${y})`}>
+              <g
+                key={nodeID}
+                transform={`translate(${x},${y})`}
+              >
                 <rect
                   width={width}
                   height={height}
@@ -59,7 +109,7 @@ export default class BlockGraph extends Component {
                   />
 
                 <foreignObject width={width} height={height}>
-                  <BasicBlock block={blocksByAddress[nodeID]} />
+                  <BasicBlock block={block} />
                 </foreignObject>
               </g>
             );
