@@ -71,10 +71,14 @@ def block_graph_to_dict(block_graph):
 
 
 def analyze_func(backend, func):
+    # TODO: redo function analysis when appropriate
+    if func.attrs.get("blocks"):
+        return
+
     print(f"analyzing {func.name} @ {func.start:#x}, size {func.size:#x}")
     arch = backend.get_arch()
-    func_mode = func.attrs.get("mode")
 
+    func_mode = func.attrs.get("mode")
     opcodes = list(arch.analyze_opcodes(func.start, func.end, mode=func_mode))
 
     for opcode in opcodes:
