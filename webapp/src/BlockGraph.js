@@ -102,7 +102,7 @@ export default class BlockGraph extends Component {
           id="arrow"
           markerWidth={10}
           markerHeight={9}
-          refX={0}
+          refX={10}
           refY={4.5}
           markerUnits="strokeWidth"
           orient="auto"
@@ -142,7 +142,8 @@ export default class BlockGraph extends Component {
             return (
               <line
                 key={[v, w]}
-                x1={nodeA.x} y1={nodeA.y} x2={nodeB.x} y2={nodeB.y}
+                x1={nodeA.x} y1={nodeA.top + nodeA.height + 2}
+                x2={nodeB.x} y2={nodeB.top - 2}
                 strokeWidth={2} stroke="black"
                 markerEnd="url(#arrow)"
                 />
