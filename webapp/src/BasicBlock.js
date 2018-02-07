@@ -26,15 +26,36 @@ export default class BasicBlock extends Component {
     return _.map(tokens, (token, i) => this.renderAsmToken(asmLine, token, i));
   }
 
-  renderAsmLine(asmLine) {
+  getMnemonicTokens(asmLine) {
+    return _.takeWhile(
+      asmLine.tokens, token => token.type.startsWith("mnemonic"));
+  }
+
+  getTokensLength(tokens) {
+    return _.sumBy(tokens, t => t.string.length);
+  }
+
+  renderAsmLine(asmLine, maxMnemonicLength) {
     const tokens = asmLine.tokens;
-    const mnemonicTokens = _.takeWhile(
-      tokens, token => token.type.startsWith("mnemonic"));
+    const mnemonicTokens = this.getMnemonicTokens(asmLine);
     const rest = _.drop(tokens, mnemonicTokens.length);
+
+    const mnemonicLength = this.getTokensLength(mnemonicTokens);
 
     return (
       <tr key={asmLine.start}>
-        <td>{this.renderAsmTokens(asmLine, mnemonicTokens)}</td>
+        <td>
+          {this.renderAsmTokens(asmLine, mnemonicTokens)}
+          {/*
+            pad mnemonics column with non-breaking spaces.
+            of course, table column will be aligned visually anyway, but this
+            way, a. the columns are separately by exactly one space, and b.
+            if the user tries to copy the text to their clipboard, they get
+            it nicely formatted.
+            TODO: I tested this and I got double spaces in the clipboard text
+          */}
+          {_.repeat("\u00a0", maxMnemonicLength + 1 - mnemonicLength)}
+        </td>
         <td>{this.renderAsmTokens(asmLine, rest)}</td>
       </tr>
     );
@@ -43,12 +64,22 @@ export default class BasicBlock extends Component {
   render() {
     const block = this.props.block;
 
+    const maxMnemonicLength = _.max(
+      _.map(
+        block.asmLines,
+        asmLine => this.getTokensLength(this.getMnemonicTokens(asmLine))
+      )
+    );
+
     return (
       <div key={block.address} className="block">
         <h5>0x{block.address.toString(16)}:</h5>
         <table>
           <tbody>
-            {_.map(block.asmLines, asmLine => this.renderAsmLine(asmLine))}
+            {_.map(
+              block.asmLines,
+              asmLine => this.renderAsmLine(asmLine, maxMnemonicLength)
+            )}
           </tbody>
         </table>
       </div>
