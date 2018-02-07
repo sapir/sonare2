@@ -22,11 +22,21 @@ export default class BasicBlock extends Component {
     );
   }
 
+  renderAsmTokens(asmLine, tokens) {
+    return _.map(tokens, (token, i) => this.renderAsmToken(asmLine, token, i));
+  }
+
   renderAsmLine(asmLine) {
+    const tokens = asmLine.tokens;
+    const mnemonicTokens = _.takeWhile(
+      tokens, token => token.type.startsWith("mnemonic"));
+    const rest = _.drop(tokens, mnemonicTokens.length);
+
     return (
-      <div key={asmLine.start}>
-        {_.map(asmLine.tokens, (token, i) => this.renderAsmToken(asmLine, token, i))}
-      </div>
+      <tr key={asmLine.start}>
+        <td>{this.renderAsmTokens(asmLine, mnemonicTokens)}</td>
+        <td>{this.renderAsmTokens(asmLine, rest)}</td>
+      </tr>
     );
   }
 
@@ -35,8 +45,12 @@ export default class BasicBlock extends Component {
 
     return (
       <div key={block.address} className="block">
-        <h5>Block @ {block.address.toString(16)}</h5>
-        {_.map(block.asmLines, asmLine => this.renderAsmLine(asmLine))}
+        <h5>0x{block.address.toString(16)}:</h5>
+        <table>
+          <tbody>
+            {_.map(block.asmLines, asmLine => this.renderAsmLine(asmLine))}
+          </tbody>
+        </table>
       </div>
     );
   }
