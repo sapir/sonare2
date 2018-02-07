@@ -13,6 +13,44 @@ export default class BlockGraph extends Component {
     this.state = {blockSizes: {}};
   }
 
+  makeBlockGraph(blocks) {
+    const g = new dagre.graphlib.Graph();
+    g.setGraph({});
+    g.setDefaultEdgeLabel(() => ({}));
+
+    for (let block of blocks) {
+      const address = block.address;
+
+      // blockSizes actually also contains other stuff, let's not put it in the
+      // node label
+      const {width, height} = this.state.blockSizes[address];
+      g.setNode(address, {width: width, height: height});
+
+      for (let toAddr of block.flow) {
+        g.setEdge(address, toAddr);
+      }
+    }
+
+    return g;
+  }
+
+  layoutBlockGraph(g) {
+    dagre.layout(g);
+
+    const nodes = g.nodes();
+    const nodeLabels = _.map(nodes, nodeID => g.node(nodeID));
+
+    const minX = _.min(_.map(nodeLabels, n => n.x));
+    const minY = _.min(_.map(nodeLabels, n => n.y));
+
+    // TODO: center graph in viewport instead, enlarge as necessary
+    // move nodes so that top-left is at (0, 0)
+    for (let n of nodeLabels) {
+      n.x -= minX;
+      n.y -= minY;
+    }
+  }
+
   render() {
     if (!this.props.func || !this.props.func.blocks)
       return <div />;
@@ -49,40 +87,14 @@ export default class BlockGraph extends Component {
       );
     }
 
-    const g = new dagre.graphlib.Graph();
-    g.setGraph({});
-    g.setDefaultEdgeLabel(() => ({}));
+    let blocksByAddress = _.fromPairs(
+      _.map(blocks, block => [block.address, block]));
 
-    let blocksByAddress = {};
-
-    for (let block of blocks) {
-      const address = block.address;
-
-      blocksByAddress[address] = block;
-
-      // blockSizes actually also contains other stuff, let's not put it in the
-      // node label
-      const {width, height} = this.state.blockSizes[address];
-      g.setNode(address, {width: width, height: height});
-      for (let toAddr of block.flow) {
-        g.setEdge(address, toAddr);
-      }
-    }
-
-    dagre.layout(g);
+    const g = this.makeBlockGraph(blocks);
+    this.layoutBlockGraph(g);
 
     const nodes = g.nodes();
     const nodeLabels = _.map(nodes, nodeID => g.node(nodeID));
-
-    const minX = _.min(_.map(nodeLabels, n => n.x));
-    const minY = _.min(_.map(nodeLabels, n => n.y));
-
-    // TODO: center graph in viewport instead, enlarge as necessary
-    // move nodes so that top-left is at (0, 0)
-    for (let n of nodeLabels) {
-      n.x -= minX;
-      n.y -= minY;
-    }
 
     const graphWidth = _.max(_.map(nodeLabels, n => n.x + n.width));
     const graphHeight = _.max(_.map(nodeLabels, n => n.y + n.height));
