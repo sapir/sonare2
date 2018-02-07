@@ -2,6 +2,7 @@ import os
 import cherrypy
 from sonare.backend import Backend
 from sonare.backend.elf_loader import load_elf
+from sonare.backend.analysis import analyze_func
 
 
 def range_to_dict(r):
@@ -32,6 +33,8 @@ class Sonare2WebServer(object):
     @cherrypy.tools.json_out()
     def func(self, name):
         func = self.backend.functions.get_by_name(name)
+
+        analyze_func(self.backend, func)
 
         d = range_to_dict(func)
         d["asm_lines"] = list(map(
