@@ -100,7 +100,7 @@ export default class BlockGraph extends Component {
     const graphHeight = _.max(_.map(nodeLabels, n => n.y + n.height));
 
     return (
-      <svg width={graphWidth} height={graphHeight}>
+      <svg width={graphWidth} height={graphHeight} className="block-graph">
         <rect width="100%" height="100%" className="background" />
 
         <g>
