@@ -98,6 +98,18 @@ export default class BlockGraph extends Component {
       <svg width={graphWidth} height={graphHeight} className="block-graph">
         <rect width="100%" height="100%" className="background" />
 
+        <marker
+          id="arrow"
+          markerWidth={10}
+          markerHeight={9}
+          refX={0}
+          refY={4.5}
+          markerUnits="strokeWidth"
+          orient="auto"
+        >
+          <path d="M0,0 L0,9 L10,4.5 Z" />
+        </marker>
+
         <g>
           {_.map(nodes, nodeID => {
             const node = g.node(nodeID);
@@ -132,6 +144,7 @@ export default class BlockGraph extends Component {
                 key={[v, w]}
                 x1={nodeA.x} y1={nodeA.y} x2={nodeB.x} y2={nodeB.y}
                 strokeWidth={2} stroke="black"
+                markerEnd="url(#arrow)"
                 />
             );
           })}
