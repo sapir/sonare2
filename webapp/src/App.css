@@ -1,5 +1,6 @@
 .App {
   height: 100%;
+  font-family: "Source Code Pro", "Ubuntu Mono", "Consolas", monospace;
 }
 
 .main-content {
