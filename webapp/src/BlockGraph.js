@@ -40,14 +40,9 @@ export default class BlockGraph extends Component {
     const nodes = g.nodes();
     const nodeLabels = _.map(nodes, nodeID => g.node(nodeID));
 
-    const minX = _.min(_.map(nodeLabels, n => n.x));
-    const minY = _.min(_.map(nodeLabels, n => n.y));
-
-    // TODO: center graph in viewport instead, enlarge as necessary
-    // move nodes so that top-left is at (0, 0) + margins
     for (let n of nodeLabels) {
-      n.x -= minX;
-      n.y -= minY;
+      n.left = n.x - n.width / 2;
+      n.top = n.y - n.height / 2;
     }
   }
 
@@ -96,8 +91,8 @@ export default class BlockGraph extends Component {
     const nodes = g.nodes();
     const nodeLabels = _.map(nodes, nodeID => g.node(nodeID));
 
-    const graphWidth = _.max(_.map(nodeLabels, n => n.x + n.width));
-    const graphHeight = _.max(_.map(nodeLabels, n => n.y + n.height));
+    const graphWidth = _.max(_.map(nodeLabels, n => n.left + n.width));
+    const graphHeight = _.max(_.map(nodeLabels, n => n.top + n.height));
 
     return (
       <svg width={graphWidth} height={graphHeight} className="block-graph">
@@ -106,14 +101,14 @@ export default class BlockGraph extends Component {
         <g>
           {_.map(nodes, nodeID => {
             const node = g.node(nodeID);
-            const {x, y, width, height} = node;
+            const {left, top, width, height} = node;
 
             const block = blocksByAddress[nodeID];
 
             return (
               <g
                 key={nodeID}
-                transform={`translate(${x},${y})`}
+                transform={`translate(${left},${top})`}
               >
                 <rect
                   width={width}
@@ -131,16 +126,11 @@ export default class BlockGraph extends Component {
           {_.map(g.edges(), ({v, w}) => {
             let nodeA = g.node(v);
             let nodeB = g.node(w);
-            const x1 = nodeA.x + nodeA.width / 2;
-            const y1 = nodeA.y + nodeA.height / 2;
-
-            const x2 = nodeB.x + nodeB.width / 2;
-            const y2 = nodeB.y + nodeB.height / 2;
 
             return (
               <line
                 key={[v, w]}
-                x1={x1} y1={y1} x2={x2} y2={y2}
+                x1={nodeA.x} y1={nodeA.y} x2={nodeB.x} y2={nodeB.y}
                 strokeWidth={2} stroke="black"
                 />
             );
