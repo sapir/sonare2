@@ -69,8 +69,8 @@ class App extends Component {
   async reloadNames() {
     const names = await this.doApiQuery("/names");
     this.setState({names: names});
-    if (names) {
-      // TODO: only redirect if no existing url, this is just a default
+
+    if (names && this.props.location.pathname === "/") {
       // TODO: when we have a text view, maybe we want default to be sth else
       // TODO: escaping for slashes in names
       const newFuncName = names[0].name;
