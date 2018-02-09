@@ -140,7 +140,8 @@ class ArmArch(BaseArch):
         if cc_str:
             tw.add("mnemonic_suffix", cc_str)
 
-        tw.write(" ")
+        if insn.op_str:
+            tw.write(" ")
 
         # parse op_str
         op_idx = 0
@@ -224,6 +225,8 @@ class ArmArch(BaseArch):
                 cc_str = ""
             else:
                 simple_text = f"{insn.insn_name()}{cc_str} {insn.op_str}"
+
+            simple_text = simple_text.strip()
 
             tokens = self._analyze_insn_tokens(
                 insn, cc_str, operands, simple_text)
