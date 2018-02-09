@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
-import { Sidebar, Segment, Header, List } from 'semantic-ui-react';
+import { Sidebar, Segment, Header, List, Message } from 'semantic-ui-react';
 import BlockGraph from './BlockGraph';
 import './App.css';
 
@@ -60,8 +60,6 @@ class App extends Component {
       this.setState({error: `error parsing JSON`});
       throw error;
     }
-
-    this.setState({error: null});
 
     return data;
   }
@@ -122,8 +120,20 @@ class App extends Component {
             <Segment className="main-content" vertical>
               {/* TODO: only for debugging? */}
               {this.state.error && (
-                <div dangerouslySetInnerHTML={{__html: this.state.error}} />
+                <div>
+                  <Message
+                    compact
+                    floating
+                    error
+                    onDismiss={() => this.setState({error: null})}
+                  >
+                    <div
+                      dangerouslySetInnerHTML={{__html: this.state.error}}
+                    />
+                  </Message>
+                </div>
               )}
+
               {this.state.func && <BlockGraph func={this.state.func} />}
             </Segment>
           </Sidebar.Pusher>
