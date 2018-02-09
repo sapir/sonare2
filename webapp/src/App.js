@@ -29,6 +29,9 @@ class App extends Component {
     if (newFuncName && newFuncName !== oldFuncName) {
       this.loadGraph(newFuncName);
     }
+    if (!newFuncName) {
+      this.setState({func: null});
+    }
   }
 
   async reloadNames() {
