@@ -78,7 +78,7 @@ def analyze_func(backend, func):
     opcodes = list(arch.analyze_opcodes(func.start, func.end, mode=func_mode))
 
     for opcode in opcodes:
-        backend.asm_lines.add(
+        backend.asm_lines.upsert(
             opcode["address"],
             opcode["address"] + opcode["size"],
             insn_name=opcode["insn_name"],
