@@ -158,6 +158,7 @@ class ArmArch(BaseArch):
                 tw.write(insn_part)
             else:
                 operand = operands[op_idx]
+                prev_operand = None if op_idx == 0 else operands[op_idx - 1]
 
                 # parse mem operands
                 if operand["type"] == "mem":
@@ -165,10 +166,20 @@ class ArmArch(BaseArch):
                     assert insn_part.endswith("]")
 
                     op_parts = insn_part[1:-1].split(", ")
+                    # for some reason, shift is attached to the previous
+                    # (destination) operand
+                    if prev_operand and prev_operand.get("shift"):
+                        shift = prev_operand["shift"]
 
-                    tw.write("[")
+                        last_part_l = op_parts[-1].lower()
+                        assert last_part_l.startswith(shift["type"]), operands
 
-                    # TODO: can this be None?
+                        # we'll handle shift manually later. for now, we don't
+                        # want to try to match it with a part_type
+                        op_parts.pop()
+                    else:
+                        shift = None
+
                     part_types = [
                         part_type for part_type in ("base", "index", "disp")
                         if operand[part_type]
@@ -176,6 +187,8 @@ class ArmArch(BaseArch):
 
                     assert len(part_types) == len(op_parts), (
                         operand, part_types, op_parts)
+
+                    tw.write("[")
 
                     for i, (op_part, part_type) in enumerate(
                             zip(op_parts, part_types)):
@@ -190,6 +203,31 @@ class ArmArch(BaseArch):
                             part_idx=i,
                             part_type=part_type,
                         )
+
+                    if shift:
+                        tw.write(", ")
+
+                        i = len(op_parts)
+                        tw.add(
+                            "operand",
+                            shift["type"],
+                            index=op_idx,
+                            part_idx=i,
+                            part_type="shift_type")
+
+                        tw.write(" ")
+
+                        i += 1
+                        value = shift["value"]
+                        # mimic capstone formatting
+                        value_str = "#" + format(
+                            value, "" if abs(value) <= 9 else "#x")
+                        tw.add(
+                            "operand",
+                            value_str,
+                            index=op_idx,
+                            part_idx=i,
+                            part_type="shift_value")
 
                     tw.write("]")
                 else:
