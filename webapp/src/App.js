@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import React, { Component } from 'react';
+import { Link } from 'react-router-dom';
 import { Sidebar, Segment, Header, List } from 'semantic-ui-react';
 import BlockGraph from './BlockGraph';
 import './App.css';
@@ -74,7 +75,10 @@ class App extends Component {
             <List>
               {_.map(this.state.names, name => (
                 <List.Item key={name.name}>
-                  {name.name}
+                  {/* TODO: escaping etc. */}
+                  <Link to={`/func/${name.name}`}>
+                    {name.name}
+                  </Link>
                 </List.Item>
               ))}
             </List>
