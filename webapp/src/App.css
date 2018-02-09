@@ -7,14 +7,6 @@
   height: 100%;
 }
 
-.token-mnemonic {
-    color: #ae81ff;
-}
-
-.token-mnemonic-suffix {
-    color: #f8f8f2;
-}
-
 .token-syntax {
     color: #f8f8f2;
 }
@@ -25,6 +17,14 @@
 
 .token-operand-reg, .token-operand-mem-base {
     color: #f92672;
+}
+
+.token-mnemonic, .token-operand-mem-shift_type {
+    color: #ae81ff;
+}
+
+.token-mnemonic-suffix {
+    color: #f8f8f2;
 }
 
 rect.background {
