@@ -197,7 +197,9 @@ class ArmArch(BaseArch):
 
                 op_idx += 1
 
-        assert ''.join(t["string"] for t in tw.tokens) == simple_text
+        tokens_text = ''.join(t["string"] for t in tw.tokens)
+        assert tokens_text == simple_text, \
+            f"tokens_text={tokens_text!r} but expected {simple_text!r}"
 
         return tw.tokens
 
