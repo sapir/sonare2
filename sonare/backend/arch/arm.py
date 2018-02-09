@@ -16,6 +16,11 @@ class ArmArch(BaseArch):
         "invalid reg cimm pimm imm fp mem setend",
         start=0)
 
+    ShiftType = Enum(
+        "ShiftType",
+        "invalid asr lsl lsr ror rrx asr_reg lsl_reg lsr_reg ror_reg rrx_reg",
+        start=0)
+
     SetEndOperand = Enum("SetEndOperand", "invalid be le", start=0)
 
     def __init__(self, backend):
@@ -119,7 +124,7 @@ class ArmArch(BaseArch):
 
         if op.shift.type != ARM_SFT_INVALID and op.shift.value:
             d["shift"] = {
-                "type": op.shift.type,
+                "type": ArmArch.ShiftType(op.shift.type).name,
                 "value": op.shift.value,
             }
 
