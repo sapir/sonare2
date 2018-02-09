@@ -12,6 +12,8 @@ class App extends Component {
     this.state = {
       names: null,
       func: null,
+      // TODO: just for debugging?
+      error: null,
     };
 
     const funcName = this.props.match.params.funcName;
@@ -35,9 +37,37 @@ class App extends Component {
     }
   }
 
+  async doApiQuery(url, ...fetchArgs) {
+    let response;
+
+    try {
+      response = await fetch(`/api/${url}`);
+    } catch (error) {
+      this.setState({error: `error accessing API`});
+      throw error;
+    }
+
+    if (!response.ok) {
+      this.setState({error: await response.text()});
+      throw new Error(`got http error: ${response.statusText}`);
+    }
+
+    let data;
+
+    try {
+      data = await response.json();
+    } catch (error) {
+      this.setState({error: `error parsing JSON`});
+      throw error;
+    }
+
+    this.setState({error: null});
+
+    return data;
+  }
+
   async reloadNames() {
-    const response = await fetch("/api/names");
-    const names = await response.json();
+    const names = await this.doApiQuery("/names");
     this.setState({names: names});
     if (names) {
       // TODO: only redirect if no existing url, this is just a default
@@ -49,21 +79,25 @@ class App extends Component {
   }
 
   async loadGraph(funcName) {
-    const response = await fetch(`/api/func/${funcName}`);
-    const func = await response.json();
+    try {
+      const func = await this.doApiQuery(`/func/${funcName}`);
 
-    // fill in block asmLines
-    const asmLinesByAddress = _.fromPairs(
-      _.map(
-        func ? func.asm_lines : [],
-        asmLine => [asmLine.start, asmLine]));
+      // fill in block asmLines
+      const asmLinesByAddress = _.fromPairs(
+        _.map(
+          func ? func.asm_lines : [],
+          asmLine => [asmLine.start, asmLine]));
 
-    for (let block of func.blocks) {
-      // TODO: handle asmLines missing from asmLinesByAddress
-      block.asmLines = _.map(block.opcodes, addr => asmLinesByAddress[addr]);
+      for (let block of func.blocks) {
+        // TODO: handle asmLines missing from asmLinesByAddress
+        block.asmLines = _.map(block.opcodes, addr => asmLinesByAddress[addr]);
+      }
+
+      this.setState({func: func});
+    } catch (error) {
+      this.setState({func: null});
+      throw error;
     }
-
-    this.setState({func: func});
   }
 
   render() {
@@ -86,6 +120,10 @@ class App extends Component {
 
           <Sidebar.Pusher>
             <Segment className="main-content" vertical>
+              {/* TODO: only for debugging? */}
+              {this.state.error && (
+                <div dangerouslySetInnerHTML={{__html: this.state.error}} />
+              )}
               {this.state.func && <BlockGraph func={this.state.func} />}
             </Segment>
           </Sidebar.Pusher>
