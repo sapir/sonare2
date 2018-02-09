@@ -215,7 +215,15 @@ class ArmArch(BaseArch):
                 for op in insn.operands
             ]
 
-            simple_text = f"{insn.insn_name()}{cc_str} {insn.op_str}"
+            # "if-then" instructions use the condition as an operand
+            if insn.insn_name().startswith("it"):
+                simple_text = f"{insn.insn_name()} {cc_str}"
+
+                # treat condition as an operand, instead of a condition suffix
+                operands.append({"type": "special", "value": cc_str})
+                cc_str = ""
+            else:
+                simple_text = f"{insn.insn_name()}{cc_str} {insn.op_str}"
 
             tokens = self._analyze_insn_tokens(
                 insn, cc_str, operands, simple_text)
