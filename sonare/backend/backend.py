@@ -156,6 +156,18 @@ class RangeTable:
             f"SELECT * FROM {self.name} WHERE name = ? LIMIT 1",
             (name, ))
 
+    def _add(self, start, end, name, kwargs):
+        with self.write_lock:
+            cur = self.db.cursor()
+            cur.execute(
+                f"""
+                INSERT INTO {self.name}(start, end, name, attrs)
+                VALUES(?, ?, ?, json(?))
+                """,
+                (start, end, name, kwargs))
+
+            return cur.lastrowid
+
     def add(self, start, end=None, name=None, **kwargs):
         if end is None:
             end = start + 1
@@ -167,16 +179,29 @@ class RangeTable:
                     f"{start:#x}-{end:#x} (name={name!r})"
                     f" overlaps with: {overlaps!r}")
 
-        with self.write_lock:
-            cur = self.db.cursor()
-            cur.execute(
-                f"""
-                INSERT INTO {self.name}(start, end, name, attrs)
-                VALUES(?, ?, ?, json(?))
-                """,
-                (start, end, name, kwargs))
+        return self._add(start, end, name, kwargs)
 
-            return cur.lastrowid
+    def upsert(self, start, end=None, name=None, **kwargs):
+        if end is None:
+            end = start + 1
+
+        with self.write_lock:
+            existing = self.get_at(start)
+            if existing:
+                assert existing.end == end
+
+                cur = self.db.cursor()
+                cur.execute(
+                    f"""
+                    UPDATE {self.name}
+                    SET name=?, attrs=json_patch(attrs, ?)
+                    WHERE id=?
+                    """,
+                    (name, kwargs, existing.id_))
+
+                return existing.id_
+            else:
+                return self._add(start, end, name, kwargs)
 
     def add_obj(self, range_obj):
         """adds object to DB and fills in range_obj.id_."""
