@@ -12,10 +12,23 @@ class App extends Component {
       names: null,
       func: null,
     };
+
+    const funcName = this.props.match.params.funcName;
+    if (funcName) {
+      this.loadGraph(funcName);
+    }
   }
 
   componentWillMount() {
     this.reloadNames();
+  }
+
+  componentWillReceiveProps(props) {
+    const oldFuncName = this.props.match.params.funcName;
+    const newFuncName = props.match.params.funcName;
+    if (newFuncName && newFuncName !== oldFuncName) {
+      this.loadGraph(newFuncName);
+    }
   }
 
   async reloadNames() {
@@ -23,7 +36,11 @@ class App extends Component {
     const names = await response.json();
     this.setState({names: names});
     if (names) {
-      this.loadGraph(names[0].name);
+      // TODO: only redirect if no existing url, this is just a default
+      // TODO: when we have a text view, maybe we want default to be sth else
+      // TODO: escaping for slashes in names
+      const newFuncName = names[0].name;
+      this.props.history.push(`/func/${newFuncName}`);
     }
   }
 
