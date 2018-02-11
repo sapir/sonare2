@@ -1,4 +1,5 @@
 import re
+import itertools
 import capstone
 from capstone.arm_const import *
 from enum import Enum
@@ -160,6 +161,16 @@ class ArmArch(BaseArch):
                 operand = operands[op_idx]
                 prev_operand = None if op_idx == 0 else operands[op_idx - 1]
 
+                part_idxes = itertools.count()
+
+                def write_op_part(part_type, string):
+                    tw.add(
+                        "operand",
+                        string,
+                        index=op_idx,
+                        part_idx=next(part_idxes),
+                        part_type=part_type)
+
                 # parse mem operands
                 if operand["type"] == "mem":
                     assert insn_part.startswith("[")
@@ -196,48 +207,24 @@ class ArmArch(BaseArch):
                         if i > 0:
                             tw.write(", ")
 
-                        tw.add(
-                            "operand",
-                            op_part,
-                            index=op_idx,
-                            part_idx=i,
-                            part_type=part_type,
-                        )
+                        write_op_part(part_type, op_part)
 
                     if shift:
                         tw.write(", ")
 
-                        i = len(op_parts)
-                        tw.add(
-                            "operand",
-                            shift["type"],
-                            index=op_idx,
-                            part_idx=i,
-                            part_type="shift_type")
+                        write_op_part("shift_type", shift["type"])
 
                         tw.write(" ")
 
-                        i += 1
                         value = shift["value"]
                         # mimic capstone formatting
                         value_str = "#" + format(
                             value, "" if abs(value) <= 9 else "#x")
-                        tw.add(
-                            "operand",
-                            value_str,
-                            index=op_idx,
-                            part_idx=i,
-                            part_type="shift_value")
+                        write_op_part("shift_value", value_str)
 
                     tw.write("]")
                 else:
-                    tw.add(
-                        "operand",
-                        m.group(),
-                        index=op_idx,
-                        part_idx=0,
-                        part_type="full",
-                    )
+                    write_op_part("full", m.group())
 
                 op_idx += 1
 
