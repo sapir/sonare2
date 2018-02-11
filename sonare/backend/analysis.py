@@ -5,12 +5,15 @@ import capstone
 
 
 def make_flow_graph(opcodes):
+    valid_addresses = {opcode["address"] for opcode in opcodes}
+
     flow_graph = nx.DiGraph()
 
     for opcode in opcodes:
         flow_graph.add_node(opcode["address"])
         flow_graph.add_edges_from(
-            (opcode["address"], f) for f in opcode["flow"])
+            (opcode["address"], f) for f in opcode["flow"]
+            if f in valid_addresses)
 
     return flow_graph
 
@@ -51,8 +54,7 @@ def make_block_graph(opcodes):
     for block, nodes in block_nodes.items():
         block_graph.add_node(block, opcodes=list(nodes))
 
-        last_opcode = opcodes_by_address[nodes[-1]]
-        next_blocks = last_opcode["flow"]
+        next_blocks = flow_graph.successors(nodes[-1])
         block_graph.add_edges_from(
             (block, next_block) for next_block in next_blocks)
 
