@@ -184,8 +184,7 @@ class ArmArch(BaseArch):
 
                     value = shift["value"]
                     # mimic capstone formatting
-                    value_str = "#" + format(
-                        value, "" if abs(value) <= 9 else "#x")
+                    value_str = "#" + format(value)
                     write_op_part("shift_value", value_str)
 
                 # parse mem operands
