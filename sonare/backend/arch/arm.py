@@ -152,7 +152,11 @@ class ArmArch(BaseArch):
         # parse op_str
         op_idx = 0
         for m in re.finditer(
-                r"([ \t,{}]+)|\[[^]]*\]|[^ \t,{}]+", insn.op_str):
+                r"""(?x)
+                    ([ \t,{}]+ | !$)
+                    | \[ [^]]* \]
+                    | [^ \t,{}]+ (?: ,\ (?:asr|lsl|lsr|ror|rrx) \  [^ \t,{}]+)?
+                    """, insn.op_str):
 
             insn_part = m.group()
             if m.group(1):
@@ -170,6 +174,19 @@ class ArmArch(BaseArch):
                         index=op_idx,
                         part_idx=next(part_idxes),
                         part_type=part_type)
+
+                def write_shift(shift):
+                    tw.write(", ")
+
+                    write_op_part("shift_type", shift["type"])
+
+                    tw.write(" ")
+
+                    value = shift["value"]
+                    # mimic capstone formatting
+                    value_str = "#" + format(
+                        value, "" if abs(value) <= 9 else "#x")
+                    write_op_part("shift_value", value_str)
 
                 # parse mem operands
                 if operand["type"] == "mem":
@@ -210,21 +227,16 @@ class ArmArch(BaseArch):
                         write_op_part(part_type, op_part)
 
                     if shift:
-                        tw.write(", ")
-
-                        write_op_part("shift_type", shift["type"])
-
-                        tw.write(" ")
-
-                        value = shift["value"]
-                        # mimic capstone formatting
-                        value_str = "#" + format(
-                            value, "" if abs(value) <= 9 else "#x")
-                        write_op_part("shift_value", value_str)
+                        write_shift(shift)
 
                     tw.write("]")
                 else:
-                    write_op_part("full", m.group())
+                    op_part = m.group()
+                    if "," in op_part:
+                        write_op_part("main", op_part.split(",")[0].strip())
+                        write_shift(operand["shift"])
+                    else:
+                        write_op_part("main", op_part)
 
                 op_idx += 1
 
