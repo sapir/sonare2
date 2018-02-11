@@ -2,6 +2,7 @@ import _ from 'lodash';
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
 import { Sidebar, Segment, Header, List, Message } from 'semantic-ui-react';
+import { doApiQuery } from './api';
 import BlockGraph from './BlockGraph';
 import './App.css';
 
@@ -38,30 +39,12 @@ class App extends Component {
   }
 
   async doApiQuery(url, ...fetchArgs) {
-    let response;
-
     try {
-      response = await fetch(`/api/${url}`);
-    } catch (error) {
-      this.setState({error: `error accessing API`});
-      throw error;
+      return await doApiQuery(url, ...fetchArgs);
+    } catch (e) {
+      this.setState({error: e.message, errorHtml: e.html || null});
+      throw e;
     }
-
-    if (!response.ok) {
-      this.setState({error: await response.text()});
-      throw new Error(`got http error: ${response.statusText}`);
-    }
-
-    let data;
-
-    try {
-      data = await response.json();
-    } catch (error) {
-      this.setState({error: `error parsing JSON`});
-      throw error;
-    }
-
-    return data;
   }
 
   async reloadNames() {
@@ -127,9 +110,13 @@ class App extends Component {
                     error
                     onDismiss={() => this.setState({error: null})}
                   >
-                    <div
-                      dangerouslySetInnerHTML={{__html: this.state.error}}
-                    />
+                    {this.state.errorHtml
+                      ? (
+                        <div dangerouslySetInnerHTML={
+                            {__html: this.state.errorHtml}} />
+                      )
+                      : <div>{this.state.error}</div>
+                    }
                   </Message>
                 </div>
               )}
