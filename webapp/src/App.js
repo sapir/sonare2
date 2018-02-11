@@ -1,8 +1,9 @@
 import _ from 'lodash';
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
-import { Sidebar, Segment, Header, List, Message } from 'semantic-ui-react';
+import { Sidebar, Segment, Header, List } from 'semantic-ui-react';
 import { doApiQuery } from './api';
+import ErrorMessage from './ErrorMessage';
 import BlockGraph from './BlockGraph';
 import './App.css';
 
@@ -31,7 +32,7 @@ class App extends Component {
     try {
       return await doApiQuery(url, ...fetchArgs);
     } catch (e) {
-      this.setState({error: e.message, errorHtml: e.html || null});
+      this.setState({error: e});
       throw e;
     }
   }
@@ -67,24 +68,7 @@ class App extends Component {
           <Sidebar.Pusher>
             <Segment className="main-content" vertical>
               {/* TODO: only for debugging? */}
-              {this.state.error && (
-                <div>
-                  <Message
-                    compact
-                    floating
-                    error
-                    onDismiss={() => this.setState({error: null})}
-                  >
-                    {this.state.errorHtml
-                      ? (
-                        <div dangerouslySetInnerHTML={
-                            {__html: this.state.errorHtml}} />
-                      )
-                      : <div>{this.state.error}</div>
-                    }
-                  </Message>
-                </div>
-              )}
+              <ErrorMessage error={this.state.error} />
 
               {this.props.match.params.funcName && (
                 <BlockGraph funcName={this.props.match.params.funcName} />
