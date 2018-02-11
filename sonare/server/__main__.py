@@ -1,7 +1,7 @@
 import os
 import cherrypy
 from sonare.backend import Backend
-from sonare.backend.elf_loader import load_elf
+from sonare.backend.loaders import load_elf
 from sonare.backend.analysis import analyze_func
 
 

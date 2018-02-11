@@ -1,6 +1,6 @@
 import os
 from .backend import Backend
-from .elf_loader import load_elf
+from .loaders import load_elf
 from .analysis import analyze_all
 
 

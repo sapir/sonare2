@@ -2,8 +2,8 @@ import sys
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 from elftools.elf.constants import SH_FLAGS, P_FLAGS
-from .backend import Range
-from .arch import BaseArch, ArmArch
+from sonare.backend.backend import Range
+from sonare.backend.arch import BaseArch, ArmArch
 
 
 class Elf:
