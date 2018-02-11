@@ -3,6 +3,7 @@ import React, { Component } from 'react';
 import update from 'immutability-helper';
 import dagre from 'dagre';
 import Measure from 'react-measure';
+import { doApiQuery } from './api';
 import ErrorMessage from './ErrorMessage';
 import BasicBlock from './BasicBlock';
 
@@ -36,8 +37,7 @@ export default class BlockGraph extends Component {
 
   async loadFunc(funcName) {
     try {
-      const response = await fetch(`/api/func/${funcName}`);
-      const func = await response.json();
+      const func = await doApiQuery(`/func/${funcName}`);
 
       // fill in block asmLines
       const asmLinesByAddress = _.fromPairs(
