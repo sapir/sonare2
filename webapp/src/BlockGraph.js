@@ -3,6 +3,7 @@ import React, { Component } from 'react';
 import update from 'immutability-helper';
 import dagre from 'dagre';
 import Measure from 'react-measure';
+import ErrorMessage from './ErrorMessage';
 import BasicBlock from './BasicBlock';
 
 
@@ -12,6 +13,7 @@ export default class BlockGraph extends Component {
 
     // TODO: clear blockSizes on function change
     this.state = {
+      error: null,
       func: null,
       blockSizes: {},
     };
@@ -48,9 +50,9 @@ export default class BlockGraph extends Component {
         block.asmLines = _.map(block.opcodes, addr => asmLinesByAddress[addr]);
       }
 
-      this.setState({func: func});
+      this.setState({func: func, error: null});
     } catch (e) {
-      this.setState({func: null});
+      this.setState({error: e, func: null});
       throw e;
     }
   }
@@ -88,9 +90,10 @@ export default class BlockGraph extends Component {
     }
   }
 
-  render() {
-    if (!this.state.func || !this.state.func.blocks)
-      return <div />;
+  renderSvg() {
+    if (!this.state.func || !this.state.func.blocks) {
+      return null;
+    }
 
     const blocks = this.state.func.blocks;
     const gotAllSizes = _.every(
@@ -193,6 +196,15 @@ export default class BlockGraph extends Component {
           })}
         </g>
       </svg>
+    );
+  }
+
+  render() {
+    return (
+      <div>
+        <ErrorMessage error={this.state.error} />
+        {this.renderSvg()}
+      </div>
     );
   }
 }
