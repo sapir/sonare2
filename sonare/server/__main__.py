@@ -33,6 +33,8 @@ class Sonare2WebServer(object):
     @cherrypy.tools.json_out()
     def func(self, name):
         func = self.backend.functions.get_by_name(name)
+        if func is None:
+            raise Exception(f"func {name!r} not found")
 
         analyze_func(self.backend, func)
 
