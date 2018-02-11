@@ -10,9 +10,7 @@ export default class BasicBlock extends Component {
       const op = asmLine.operands[token.index];
       className += ` token-operand-${op.type}`;
 
-      if (token.part_type !== "full") {
-        className += ` token-operand-${op.type}-${token.part_type}`;
-      }
+      className += ` token-operand-${token.part_type}`;
     }
 
     return (

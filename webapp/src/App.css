@@ -15,11 +15,14 @@
     color: #fd971f;
 }
 
-.token-operand-reg, .token-operand-mem-base {
+.token-operand-reg,
+.token-operand-mem.token-operand-base,
+.token-operand-mem.token-operand-index
+{
     color: #f92672;
 }
 
-.token-mnemonic, .token-operand-mem-shift_type {
+.token-mnemonic, .token-operand-shift_type {
     color: #ae81ff;
 }
 
