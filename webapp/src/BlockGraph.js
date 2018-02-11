@@ -9,8 +9,50 @@ import BasicBlock from './BasicBlock';
 export default class BlockGraph extends Component {
   constructor(props) {
     super(props);
-    // TODO: clear blockSizes on props change
-    this.state = {blockSizes: {}};
+
+    // TODO: clear blockSizes on function change
+    this.state = {
+      func: null,
+      blockSizes: {},
+    };
+
+    if (props.funcName) {
+      this.loadFunc(props.funcName);
+    }
+  }
+
+  componentWillReceiveProps(newProps) {
+    const oldFuncName = this.props.funcName;
+    const newFuncName = newProps.funcName;
+    if (newFuncName && newFuncName !== oldFuncName) {
+      this.loadFunc(newFuncName);
+    }
+    if (!newFuncName) {
+      this.setState({func: null});
+    }
+  }
+
+  async loadFunc(funcName) {
+    try {
+      const response = await fetch(`/api/func/${funcName}`);
+      const func = await response.json();
+
+      // fill in block asmLines
+      const asmLinesByAddress = _.fromPairs(
+        _.map(
+          func ? func.asm_lines : [],
+          asmLine => [asmLine.start, asmLine]));
+
+      for (let block of func.blocks) {
+        // TODO: handle asmLines missing from asmLinesByAddress
+        block.asmLines = _.map(block.opcodes, addr => asmLinesByAddress[addr]);
+      }
+
+      this.setState({func: func});
+    } catch (e) {
+      this.setState({func: null});
+      throw e;
+    }
   }
 
   makeBlockGraph(blocks) {
@@ -47,10 +89,10 @@ export default class BlockGraph extends Component {
   }
 
   render() {
-    if (!this.props.func || !this.props.func.blocks)
+    if (!this.state.func || !this.state.func.blocks)
       return <div />;
 
-    const blocks = this.props.func.blocks;
+    const blocks = this.state.func.blocks;
     const gotAllSizes = _.every(
       blocks, block => this.state.blockSizes[block.address]);
     if (!gotAllSizes) {
