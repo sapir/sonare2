@@ -21,8 +21,8 @@ def disassemble_objdump(filename):
         code = re.sub(r"\s+", " ", code)
 
         lines.append({
-            "address": addr,
-            "size": len(insn_bytes),
+            "start": addr,
+            "end": addr + len(insn_bytes),
             "text": code,
         })
 
@@ -36,11 +36,30 @@ class AvrArch(BaseArch):
     def hook_post_load_file(self, filename, loader_type):
         assert loader_type == "elf"
 
-        for line in disassemble_objdump(filename):
+        raw_asm_lines = disassemble_objdump(filename)
+        for line in raw_asm_lines:
             self.backend.asm_lines.upsert(
-                line["address"],
-                line["address"] + line["size"],
+                line["start"],
+                line["end"],
                 text=line["text"],
             )
+
+        # assume functions start on lines following "ret" and mark them all
+        # TODO: also interrupt vectors
+        func_starts = [0]
+        func_starts += [
+            line["end"] for line in raw_asm_lines
+            if line["text"] == "ret"
+        ]
+
+        # let last function end at end of file = last_line_end
+        last_line_end = raw_asm_lines[-1]["end"]
+        for func_start, next_func_start in zip(
+                func_starts, func_starts[1:] + [last_line_end]):
+
+            self.backend.functions.add(
+                func_start,
+                next_func_start,
+                name=f"func_{func_start:x}")
 
     # TODO: analyze_opcodes
