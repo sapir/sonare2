@@ -25,6 +25,9 @@ class BaseArch:
     def hook_load_symbol(self, sym):
         pass
 
+    def hook_post_load_file(self):
+        pass
+
     def _disassemble(self, cs_obj, cs_mode, start, end):
         """
         helper method to set up a disassembly iterator with an existing

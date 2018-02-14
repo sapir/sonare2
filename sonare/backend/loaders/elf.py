@@ -65,6 +65,8 @@ class Elf:
                         func_obj = backend_obj.copy_new()
                         backend.functions.add_obj(func_obj)
 
+            arch.hook_post_load_file()
+
     def _load_segments_as_sections(self, backend):
         for segment in self.elffile.iter_segments():
             if segment["p_type"] == "PT_LOAD":
