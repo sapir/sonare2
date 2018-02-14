@@ -25,7 +25,7 @@ class BaseArch:
     def hook_load_symbol(self, sym):
         pass
 
-    def hook_post_load_file(self):
+    def hook_post_load_file(self, filename, loader_type):
         pass
 
     def _disassemble(self, cs_obj, cs_mode, start, end):
