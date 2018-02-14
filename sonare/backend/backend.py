@@ -2,7 +2,7 @@ import sqlite3
 import json
 from threading import RLock
 from .buf_mgr import BufferManager
-from .arch import BaseArch, ArmArch
+from .arch import BaseArch, ArmArch, AvrArch
 
 
 sqlite3.register_adapter(dict, json.dumps)
@@ -373,6 +373,8 @@ class Backend:
 
         if arch_name == "Arm":
             cls = ArmArch
+        elif arch_name == "Avr":
+            cls = AvrArch
         elif arch_name is None:
             cls = BaseArch
         else:

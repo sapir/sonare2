@@ -16,6 +16,8 @@ class Elf:
 
         if elf_arch == "EM_ARM":
             return "Arm"
+        elif elf_arch == "EM_AVR":
+            return "Avr"
         else:
             return None
 
