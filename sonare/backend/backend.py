@@ -9,16 +9,6 @@ sqlite3.register_adapter(dict, json.dumps)
 sqlite3.register_converter("json", json.loads)
 
 
-class Symbol:
-    def __init__(self, name, addr, size=1):
-        self.name = name
-        self.addr = addr
-        self.size = size
-
-    def __repr__(self):
-        return f"Symbol({self.name!r})"
-
-
 class Range:
     """
     A [start address, end address] range, possibly with extra attributes.
