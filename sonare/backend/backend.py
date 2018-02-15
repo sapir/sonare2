@@ -331,13 +331,16 @@ class ConfigTable:
 
 
 class Backend:
-    def __init__(self, filename=None):
+    def __init__(self, filename=None, userdb_filename=None):
         self.filename = filename
 
-        self.db = sqlite3.connect(
-            self._sqlite_path,
-            detect_types=sqlite3.PARSE_DECLTYPES,
-            check_same_thread=False)
+        self.userdb_filename = (
+            userdb_filename if userdb_filename
+            else filename + ".userdb" if filename
+            else None)
+
+        self.db = self._connect_to_sqlite(filename)
+        self.userdb = self._connect_to_sqlite(userdb_filename)
 
         self.buf_mgr = BufferManager(self.buf_dir)
 
@@ -347,9 +350,16 @@ class Backend:
         self.functions = RangeTable(self.db, "functions", allow_overlaps=False)
         self.asm_lines = AssemblyLinesTable(self.db)
 
-    @property
-    def _sqlite_path(self):
-        return ":memory:" if self.filename is None else self.filename
+        self.user_lines = AssemblyLinesTable(self.userdb)
+
+    @staticmethod
+    def _connect_to_sqlite(filename):
+        sqlite_path = ":memory:" if filename is None else filename
+
+        return sqlite3.connect(
+            sqlite_path,
+            detect_types=sqlite3.PARSE_DECLTYPES,
+            check_same_thread=False)
 
     @property
     def buf_dir(self):
