@@ -2,6 +2,7 @@ import re
 import itertools
 from binascii import unhexlify
 from subprocess import check_output
+import sonare
 from .base import BaseArch, TokenWriter
 
 
@@ -58,10 +59,13 @@ class AvrArch(BaseArch):
         for func_start, next_func_start in zip(
                 func_starts, func_starts[1:] + [last_line_end]):
 
-            self.backend.functions.add(
-                func_start,
-                next_func_start,
-                name=f"func_{func_start:x}")
+            func_name = f"func_{func_start:x}"
+            name_obj = sonare.backend.Range(
+                func_start, next_func_start, name=func_name)
+            self.backend.names.add_obj(name_obj)
+
+            func_obj = name_obj.copy_new()
+            self.backend.functions.add_obj(func_obj)
 
     def _operand_to_dict(self, asm_line, op_str):
         if op_str.startswith("."):
