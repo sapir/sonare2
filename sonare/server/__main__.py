@@ -21,7 +21,7 @@ class Root(object):
 
 class Sonare2WebServer(object):
     def __init__(self):
-        self.backend = Backend()
+        self.backend = Backend(userdb_filename="server.userdb")
         load_elf(self.backend, "test.so")
 
     @cherrypy.expose
