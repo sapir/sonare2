@@ -74,9 +74,9 @@ export default class BasicBlock extends Component {
 
     if (name) {
       // add an empty line
-      // TODO: not for first line in block
       // TODO: don't include this in tabIndex etc.
-      lines.push(<div key="prelabel" />);
+      if (!isFirstInBlock)
+        lines.push(<div key="prelabel">&nbsp;</div>);
 
       // TODO: label should be a bit to the left of the code
       lines.push(
