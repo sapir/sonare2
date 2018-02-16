@@ -15,6 +15,10 @@ def range_to_dict(r):
     return d
 
 
+def ranges_to_list(rs):
+    return list(map(range_to_dict, rs))
+
+
 class Root(object):
     pass
 
@@ -27,7 +31,7 @@ class Sonare2WebServer(object):
     @cherrypy.expose
     @cherrypy.tools.json_out()
     def names(self):
-        return list(map(range_to_dict, self.backend.names.iter_by_name()))
+        return ranges_to_list(self.backend.names.iter_by_name())
 
     @cherrypy.expose
     @cherrypy.tools.json_out()
@@ -39,10 +43,9 @@ class Sonare2WebServer(object):
         analyze_func(self.backend, func)
 
         d = range_to_dict(func)
-        d["asm_lines"] = list(map(
-            range_to_dict,
+        d["asm_lines"] = ranges_to_list(
             self.backend.asm_lines.iter_where_overlaps(
-                func.start, func.start + func.size)))
+                func.start, func.start + func.size))
 
         return d
 
