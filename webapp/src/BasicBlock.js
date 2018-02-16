@@ -20,6 +20,7 @@ export default class BasicBlock extends Component {
   }
 
   renderAsmToken(asmLine, token, i) {
+    let string = token.string;
     let className = `token-${token.type}`;
 
     if (token.type === "operand") {
@@ -27,11 +28,26 @@ export default class BasicBlock extends Component {
       className += ` token-operand-${op.type}`;
 
       className += ` token-operand-${token.part_type}`;
+
+      if (op.ref) {
+        const refValue = (op.value !== undefined) ? op.value : op.imm;
+        if (refValue !== undefined) {
+          if (token.part_idx > 0) {
+            // we replaced the first part with a different string (in the else
+            // clause of this "if" for a previous token) so now clear the other
+            // parts
+            return null;
+          } else {
+            const name = (this.props.namesByAddress || {})[refValue];
+            string = name || refValue.toString(16);
+          }
+        }
+      }
     }
 
     return (
       <span key={i} className={className}>
-        {token.string}
+        {string}
       </span>
     );
   }

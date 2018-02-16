@@ -45,18 +45,28 @@ export default class BlockGraph extends Component {
           func ? func.asm_lines : [],
           asmLine => [asmLine.start, asmLine]));
 
+      const namesByAddress = {};
+
       // merge names and user_lines into asm_lines. user_lines has precedence.
+      // similary, save names in namesByAddress, with precedence for
+      // user_lines.
       if (func) {
-        for (let name of func.names) {
-          const asmLine = asmLinesByAddress[name.start];
+        for (let nameObj of func.names) {
+          namesByAddress[nameObj.start] = nameObj.name;
+
+          const asmLine = asmLinesByAddress[nameObj.start];
           if (asmLine) {
-            asmLine.name = name.name;
+            asmLine.name = nameObj.name;
           }
         }
 
         // TODO: handle userLines that don't match asmLine start addresses
         for (let userLine of func.user_lines) {
           _.merge(asmLinesByAddress[userLine.start], userLine);
+
+          if (userLine.name) {
+            namesByAddress[userLine.start] = userLine.name;
+          }
         }
       }
 
@@ -65,9 +75,9 @@ export default class BlockGraph extends Component {
         block.asmLines = _.map(block.opcodes, addr => asmLinesByAddress[addr]);
       }
 
-      this.setState({func: func, error: null});
+      this.setState({func: func, namesByAddress: namesByAddress, error: null});
     } catch (e) {
-      this.setState({error: e, func: null});
+      this.setState({error: e, func: null, namesByAddress: null});
       throw e;
     }
   }
@@ -132,7 +142,10 @@ export default class BlockGraph extends Component {
               >
                 {({measureRef}) => (
                   <div ref={measureRef} style={{display: "inline-block"}}>
-                    <BasicBlock block={block} />
+                    <BasicBlock
+                      block={block}
+                      namesByAddress={this.state.namesByAddress}
+                      />
                   </div>
                 )}
               </Measure>
@@ -189,7 +202,10 @@ export default class BlockGraph extends Component {
                   />
 
                 <foreignObject width={width} height={height}>
-                  <BasicBlock block={block} />
+                  <BasicBlock
+                    block={block}
+                    namesByAddress={this.state.namesByAddress}
+                    />
                 </foreignObject>
               </g>
             );

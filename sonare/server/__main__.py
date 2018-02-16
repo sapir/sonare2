@@ -28,6 +28,23 @@ class Sonare2WebServer(object):
         self.backend = Backend(userdb_filename="server.userdb")
         load_elf(self.backend, "test.so")
 
+    def get_reffed_addrs(self, from_addrs):
+        asm_lines = self.backend.asm_lines.get_at_many(from_addrs)
+
+        result = set()
+
+        for line in asm_lines:
+            for op in line.attrs.get("operands", []):
+                if "ref" in op:
+                    try:
+                        value = op["value"]
+                    except KeyError:
+                        value = op["imm"]
+
+                    result.add(value)
+
+        return result
+
     @cherrypy.expose
     @cherrypy.tools.json_out()
     def names(self):
@@ -56,14 +73,22 @@ class Sonare2WebServer(object):
 
         d = range_to_dict(func)
 
-        def add_overlapping(table_name):
+        extra_tables = ["names", "asm_lines", "user_lines"]
+
+        for table_name in extra_tables:
             table = getattr(self.backend, table_name)
             d[table_name] = ranges_to_list(
                 table.iter_where_overlaps(func.start, func_end))
 
-        add_overlapping("names")
-        add_overlapping("asm_lines")
-        add_overlapping("user_lines")
+        # TODO: we maybe need to get addrs reffed by the first bunch of reffed
+        # addrs, to display reffed asm_lines correctly
+        reffed_addrs = self.get_reffed_addrs(
+            line["start"] for line in d["asm_lines"])
+
+        for table_name in extra_tables:
+            table = getattr(self.backend, table_name)
+            d[table_name] += ranges_to_list(
+                table.get_at_many(reffed_addrs))
 
         return d
 
