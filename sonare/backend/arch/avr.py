@@ -120,6 +120,21 @@ class AvrArch(BaseArch):
             f"operand {op_str!r} in {asm_line.attrs['text']!r}"
             f" @ {asm_line.start:#x} not supported")
 
+    def _analyze_operand_types(self, asm_line, insn_name, operands):
+        # jumps, calls and branches, but not indirect ones
+        if (("jmp" in insn_name and "ijmp" not in insn_name) or
+                ("call" in insn_name and "icall" not in insn_name) or
+                insn_name.startswith("br")):
+
+            operands[0].update(
+                dtype="ref",
+                ref={
+                    "dtype": "func" if "call" in insn_name else "code",
+                    # unknown size
+                    "size": None,
+                }
+            )
+
     def _analyze_insn_tokens(self, asm_line, insn_name, operands):
         tw = TokenWriter()
 
@@ -208,6 +223,8 @@ class AvrArch(BaseArch):
                 op_strs = []
 
             operands = [self._operand_to_dict(asm_line, op) for op in op_strs]
+
+            self._analyze_operand_types(asm_line, insn_name, operands)
 
             tokens = self._analyze_insn_tokens(asm_line, insn_name, operands)
 
