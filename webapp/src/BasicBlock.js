@@ -67,11 +67,11 @@ export default class BasicBlock extends Component {
       <div key="asm">
         {this.renderAsmTokens(asmLine, mnemonicTokens)}
         {/*
-          pad mnemonics to column width, with non-breaking spaces.
-          TODO: I tested copying to clipboard and I got an extra space in the
-          clipboard text
+          pad mnemonics to max width, with non-breaking spaces.
+          note that "rest" already includes a space token after the mnemonic,
+          so there'll be a space before any operands etc.
         */}
-        {_.repeat("\u00a0", maxMnemonicLength + 1 - mnemonicLength)}
+        {_.repeat("\u00a0", maxMnemonicLength - mnemonicLength)}
         {this.renderAsmTokens(asmLine, rest)}
       </div>
     );
