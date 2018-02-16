@@ -102,6 +102,11 @@ class RangeTable:
         cur.execute(*args)
         return cur.fetchone()
 
+    def _query_all(self, *args):
+        cur = self.db.cursor()
+        cur.execute(*args)
+        return cur.fetchall()
+
     def _row_to_obj(self, row):
         return Range(*row[1:], id_=row[0])
 
@@ -118,6 +123,10 @@ class RangeTable:
             SELECT * FROM {self.name}
             WHERE {addr} BETWEEN start AND end - 1
             """)
+
+    def get_at_many(self, addrs):
+        # TODO: use DB to do this better
+        return list(filter(None, (self.get_at(addr) for addr in addrs)))
 
     def get_first_after(self, addr):
         """does not include any range including addr"""
