@@ -48,3 +48,17 @@ div.block {
 div.block h5 {
     color: #75715e;
 }
+
+
+div.input-line {
+    display: flex;
+}
+
+div.input-line input[type="text"] {
+    border: 0;
+    background: unset;
+    color: unset;
+    font-family: unset;
+    padding: 0;
+    margin: 0;
+}

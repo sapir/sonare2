@@ -1,8 +1,22 @@
 import _ from 'lodash';
 import React, { Component } from 'react';
+import update from 'immutability-helper';
 
 
 export default class BasicBlock extends Component {
+  constructor(props) {
+    super(props);
+
+    this.onInputRef = this.onInputRef.bind(this);
+    this.saveEdit = this.saveEdit.bind(this);
+
+    this.state = {
+      editAddr: null,
+      editField: null,
+      localEdits: {},
+    }
+  }
+
   renderAsmToken(asmLine, token, i) {
     let className = `token-${token.type}`;
 
@@ -33,6 +47,12 @@ export default class BasicBlock extends Component {
     return _.sumBy(tokens, t => t.string.length);
   }
 
+  isEditing(editField, asmLine) {
+    return (this.state
+            && this.state.editAddr === asmLine.start
+            && this.state.editField === editField);
+  }
+
   renderAsmLine(asmLine, maxMnemonicLength) {
     const tokens = asmLine.tokens;
     const mnemonicTokens = this.getMnemonicTokens(asmLine);
@@ -40,11 +60,14 @@ export default class BasicBlock extends Component {
 
     const mnemonicLength = this.getTokensLength(mnemonicTokens);
 
+    const localEdits = this.state.localEdits[asmLine.start] || {};
+
     const lines = [];
 
     if (asmLine.name) {
       // add an empty line
       // TODO: not for first line in block
+      // TODO: don't include this in tabIndex etc.
       lines.push(<div key="prelabel" />);
 
       // TODO: label should be a bit to the left of the code
@@ -55,10 +78,28 @@ export default class BasicBlock extends Component {
       );
     }
 
-    if (asmLine.comment) {
+    // prefer local copy
+    const comment = (
+      (localEdits.comment !== undefined)
+      ? localEdits.comment
+      : asmLine.comment
+    );
+
+    if (this.isEditing("comment", asmLine)) {
+      lines.push(
+        <div key="comment" className="comment input-line">
+          ;&nbsp;<input
+              type="text"
+              ref={this.onInputRef}
+              defaultValue={comment}
+              onBlur={this.saveEdit}
+              />
+        </div>
+      );
+    } else if (comment) {
       lines.push(
         <div key="comment" className="comment">
-          ; {asmLine.comment}
+          ; {comment}
         </div>
       );
     }
@@ -77,10 +118,57 @@ export default class BasicBlock extends Component {
     );
 
     return (
-      <div key={asmLine.start}>
+      <div
+        key={asmLine.start}
+        tabIndex={0}
+        onKeyPress={(event) => this.onAsmLineKeyPress(asmLine, event)}
+        className="asm-line"
+      >
         {lines}
       </div>
     );
+  }
+
+  onAsmLineKeyPress(asmLine, event) {
+    switch (event.key) {
+    case ";":
+      this.setState({editAddr: asmLine.start, editField: "comment"});
+      event.preventDefault();
+      break;
+
+    default: break;
+    }
+  }
+
+  onInputRef(input) {
+    if (input) {
+      input.focus();
+      input.select();
+    }
+  }
+
+  // called by <input> events
+  saveEdit(event) {
+    // TODO: push to server. clear localEdits on server reply.
+    const {editAddr, editField} = this.state;
+    const {value} = event.target;
+
+    this.setState({
+      editAddr: null,
+      editField: null,
+      localEdits: update(
+        this.state.localEdits,
+        {
+          [editAddr]: edits =>
+            update(edits || {}, {
+              [editField]: {
+                $set: value
+              }
+            })
+        }),
+    });
+
+    event.preventDefault();
   }
 
   render() {
