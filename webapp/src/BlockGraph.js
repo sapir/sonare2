@@ -45,6 +45,14 @@ export default class BlockGraph extends Component {
           func ? func.asm_lines : [],
           asmLine => [asmLine.start, asmLine]));
 
+      // merge user_lines into asm_lines
+      if (func) {
+        // TODO: handle userLines that don't match asmLine start addresses
+        for (let userLine of func.user_lines) {
+          _.assign(asmLinesByAddress[userLine.start], userLine);
+        }
+      }
+
       for (let block of func.blocks) {
         // TODO: handle asmLines missing from asmLinesByAddress
         block.asmLines = _.map(block.opcodes, addr => asmLinesByAddress[addr]);

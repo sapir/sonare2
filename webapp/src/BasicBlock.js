@@ -33,6 +33,17 @@ export default class BasicBlock extends Component {
     return _.sumBy(tokens, t => t.string.length);
   }
 
+  // comments and labels, not actual assembly
+  makeAnnotationLine(key, content) {
+    return (
+      <tr key={key}>
+        <td colSpan={2}>
+          {content}
+        </td>
+      </tr>
+    );
+  }
+
   renderAsmLine(asmLine, maxMnemonicLength) {
     const tokens = asmLine.tokens;
     const mnemonicTokens = this.getMnemonicTokens(asmLine);
@@ -40,7 +51,28 @@ export default class BasicBlock extends Component {
 
     const mnemonicLength = this.getTokensLength(mnemonicTokens);
 
-    return (
+    const lines = [];
+
+    if (asmLine.name) {
+      // add an empty line
+      // TODO: not for first line in block
+      lines.push(this.makeAnnotationLine(`${asmLine.start}_prelabel`, null));
+
+      // TODO: label should be a bit to the left of the code
+      lines.push(this.makeAnnotationLine(
+        `${asmLine.start}_label`,
+        <span className="label">{asmLine.name}:</span>
+      ));
+    }
+
+    if (asmLine.comment) {
+      lines.push(this.makeAnnotationLine(
+        `${asmLine.start}_comment`,
+        <span className="comment">; {asmLine.comment}</span>
+      ));
+    }
+
+    lines.push(
       <tr key={asmLine.start}>
         <td>
           {this.renderAsmTokens(asmLine, mnemonicTokens)}
@@ -57,6 +89,8 @@ export default class BasicBlock extends Component {
         <td>{this.renderAsmTokens(asmLine, rest)}</td>
       </tr>
     );
+
+    return lines;
   }
 
   render() {
