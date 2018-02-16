@@ -56,10 +56,12 @@ class Sonare2WebServer(object):
         # TODO: clear up where names should really be,
         # names/functions/asm_lines, including user inputs.
 
-        # TODO: user can rename...?
-        name_obj = self.backend.names.get_by_name(name)
+        # get name by both user db and main db
+        name_obj = self.backend.user_lines.get_by_name(name)
         if name_obj is None:
-            raise Exception(f"func {name!r} not found")
+            name_obj = self.backend.names.get_by_name(name)
+            if name_obj is None:
+                raise Exception(f"func {name!r} not found")
 
         addr = name_obj.start
         func = self.backend.functions.get_at(addr)
