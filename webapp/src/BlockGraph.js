@@ -45,8 +45,15 @@ export default class BlockGraph extends Component {
           func ? func.asm_lines : [],
           asmLine => [asmLine.start, asmLine]));
 
-      // merge user_lines into asm_lines
+      // merge names and user_lines into asm_lines. user_lines has precedence.
       if (func) {
+        for (let name of func.names) {
+          const asmLine = asmLinesByAddress[name.start];
+          if (asmLine) {
+            asmLine.name = name.name;
+          }
+        }
+
         // TODO: handle userLines that don't match asmLine start addresses
         for (let userLine of func.user_lines) {
           _.merge(asmLinesByAddress[userLine.start], userLine);
