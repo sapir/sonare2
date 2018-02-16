@@ -49,7 +49,7 @@ export default class BlockGraph extends Component {
       if (func) {
         // TODO: handle userLines that don't match asmLine start addresses
         for (let userLine of func.user_lines) {
-          _.assign(asmLinesByAddress[userLine.start], userLine);
+          _.merge(asmLinesByAddress[userLine.start], userLine);
         }
       }
 
