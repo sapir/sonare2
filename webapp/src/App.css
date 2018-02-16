@@ -48,11 +48,3 @@ div.block {
 div.block h5 {
     color: #75715e;
 }
-
-div.block > table {
-    border-spacing: 0;
-}
-
-div.block > table > tbody > tr > td {
-    padding: 0;
-}

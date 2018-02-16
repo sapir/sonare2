@@ -33,17 +33,6 @@ export default class BasicBlock extends Component {
     return _.sumBy(tokens, t => t.string.length);
   }
 
-  // comments and labels, not actual assembly
-  makeAnnotationLine(key, content) {
-    return (
-      <tr key={key}>
-        <td colSpan={2}>
-          {content}
-        </td>
-      </tr>
-    );
-  }
-
   renderAsmLine(asmLine, maxMnemonicLength) {
     const tokens = asmLine.tokens;
     const mnemonicTokens = this.getMnemonicTokens(asmLine);
@@ -56,41 +45,42 @@ export default class BasicBlock extends Component {
     if (asmLine.name) {
       // add an empty line
       // TODO: not for first line in block
-      lines.push(this.makeAnnotationLine(`${asmLine.start}_prelabel`, null));
+      lines.push(<div key="prelabel" />);
 
       // TODO: label should be a bit to the left of the code
-      lines.push(this.makeAnnotationLine(
-        `${asmLine.start}_label`,
-        <span className="label">{asmLine.name}:</span>
-      ));
+      lines.push(
+        <div key="label" className="label">
+          {asmLine.name}:
+        </div>
+      );
     }
 
     if (asmLine.comment) {
-      lines.push(this.makeAnnotationLine(
-        `${asmLine.start}_comment`,
-        <span className="comment">; {asmLine.comment}</span>
-      ));
+      lines.push(
+        <div key="comment" className="comment">
+          ; {asmLine.comment}
+        </div>
+      );
     }
 
     lines.push(
-      <tr key={asmLine.start}>
-        <td>
-          {this.renderAsmTokens(asmLine, mnemonicTokens)}
-          {/*
-            pad mnemonics column with non-breaking spaces.
-            of course, table column will be aligned visually anyway, but this
-            way, a. the columns are separately by exactly one space, and b.
-            if the user tries to copy the text to their clipboard, they get
-            it nicely formatted.
-            TODO: I tested this and I got double spaces in the clipboard text
-          */}
-          {_.repeat("\u00a0", maxMnemonicLength + 1 - mnemonicLength)}
-        </td>
-        <td>{this.renderAsmTokens(asmLine, rest)}</td>
-      </tr>
+      <div key="asm">
+        {this.renderAsmTokens(asmLine, mnemonicTokens)}
+        {/*
+          pad mnemonics to column width, with non-breaking spaces.
+          TODO: I tested copying to clipboard and I got an extra space in the
+          clipboard text
+        */}
+        {_.repeat("\u00a0", maxMnemonicLength + 1 - mnemonicLength)}
+        {this.renderAsmTokens(asmLine, rest)}
+      </div>
     );
 
-    return lines;
+    return (
+      <div key={asmLine.start}>
+        {lines}
+      </div>
+    );
   }
 
   render() {
@@ -106,14 +96,10 @@ export default class BasicBlock extends Component {
     return (
       <div key={block.address} className="block">
         <h5>0x{block.address.toString(16)}:</h5>
-        <table>
-          <tbody>
-            {_.map(
-              block.asmLines,
-              asmLine => this.renderAsmLine(asmLine, maxMnemonicLength)
-            )}
-          </tbody>
-        </table>
+        {_.map(
+          block.asmLines,
+          asmLine => this.renderAsmLine(asmLine, maxMnemonicLength)
+        )}
       </div>
     );
   }
