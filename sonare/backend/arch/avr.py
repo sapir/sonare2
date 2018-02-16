@@ -69,9 +69,13 @@ class AvrArch(BaseArch):
 
     def _operand_to_dict(self, asm_line, op_str):
         if op_str.startswith("."):
+            # ".+decimal" or ".-decimal"
+            disp = int(op_str[1:])
+            tgt = asm_line.end + disp
             return {
                 "type": "rel",
-                "disp": int(op_str[1:]),
+                "disp": disp,
+                "value": tgt,
             }
 
         try:
