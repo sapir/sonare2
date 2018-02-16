@@ -8,6 +8,7 @@ export default class BasicBlock extends Component {
     super(props);
 
     this.onInputRef = this.onInputRef.bind(this);
+    this.onInputKeyDown = this.onInputKeyDown.bind(this);
     this.saveEdit = this.saveEdit.bind(this);
 
     this.state = {
@@ -92,6 +93,7 @@ export default class BasicBlock extends Component {
               type="text"
               ref={this.onInputRef}
               defaultValue={comment}
+              onKeyDown={this.onInputKeyDown}
               onBlur={this.saveEdit}
               />
         </div>
@@ -144,6 +146,14 @@ export default class BasicBlock extends Component {
     if (input) {
       input.focus();
       input.select();
+    }
+  }
+
+  onInputKeyDown(event) {
+    if (event.key === "Enter") {
+      this.saveEdit(event);
+      event.preventDefault();
+      // TODO: focus assembly line
     }
   }
 
