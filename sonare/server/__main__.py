@@ -42,10 +42,17 @@ class Sonare2WebServer(object):
 
         analyze_func(self.backend, func)
 
+        func_end = func.start + func.size
+
         d = range_to_dict(func)
+
         d["asm_lines"] = ranges_to_list(
             self.backend.asm_lines.iter_where_overlaps(
-                func.start, func.start + func.size))
+                func.start, func_end))
+
+        d["user_lines"] = ranges_to_list(
+            self.backend.user_lines.iter_where_overlaps(
+                func.start, func_end))
 
         return d
 
