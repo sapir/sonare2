@@ -1,3 +1,6 @@
+import _ from 'lodash';
+
+
 export class ApiError extends Error {
   constructor(message, html) {
     super(message);
@@ -7,6 +10,15 @@ export class ApiError extends Error {
 }
 
 export async function doApiQuery(url, fetchArgs) {
+  if (!fetchArgs)
+    fetchArgs = {};
+
+  _.merge(fetchArgs, {
+    headers: {
+      'Accept': 'application/json',
+    },
+  });
+
   const response = await fetch(`/api/${url}`, fetchArgs);
 
   if (!response.ok) {
