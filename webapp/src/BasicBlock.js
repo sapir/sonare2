@@ -67,16 +67,35 @@ export default class BasicBlock extends Component {
     const lines = [];
 
     const name = (
-      asmLine.name ? asmLine.name
-      : isFirstInBlock ? `loc_${asmLine.start.toString(16)}`
-      : null
+      (localEdits.name !== undefined ? localEdits.name : asmLine.name)
+      || (isFirstInBlock ? `loc_${asmLine.start.toString(16)}` : null)
     );
 
-    if (name) {
+    function addPreLabelLine() {
       // add an empty line
       // TODO: don't include this in tabIndex etc.
       if (!isFirstInBlock)
         lines.push(<div key="prelabel">&nbsp;</div>);
+    }
+
+    if (this.isEditing("name", asmLine)) {
+      addPreLabelLine();
+
+      /* TODO: display ":" after input during editing, but don't save it and
+      don't let user select it or delete it */
+      lines.push(
+        <div key="label" className="label input-line">
+          <input
+              type="text"
+              ref={this.onInputRef}
+              defaultValue={name}
+              onKeyDown={this.onInputKeyDown}
+              onBlur={this.saveEdit}
+              />
+        </div>
+      );
+    } else if (name) {
+      addPreLabelLine();
 
       // TODO: label should be a bit to the left of the code
       lines.push(
@@ -150,6 +169,11 @@ export default class BasicBlock extends Component {
       event.preventDefault();
       break;
 
+    case "n":
+      this.setState({editAddr: asmLine.start, editField: "name"});
+      event.preventDefault();
+      break;
+
     default: break;
     }
   }
@@ -207,7 +231,18 @@ export default class BasicBlock extends Component {
         });
       break;
 
-    default: break;
+    case "name":
+      await doApiQuery(
+        "/set_line_name",
+        {
+          addr: editAddr,
+          name: value,
+        });
+      break;
+
+    default:
+      throw new Error(
+        `Don't know how to save edit for {editAddr.toString(16)}:{editField}`);
     }
   }
 

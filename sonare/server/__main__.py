@@ -37,7 +37,7 @@ class Sonare2WebServer(object):
     @cherrypy.tools.json_out()
     def func(self, name):
         # TODO: clear up where names should really be,
-        # names/functions/asm_lines
+        # names/functions/asm_lines, including user inputs.
 
         # TODO: user can rename...?
         name_obj = self.backend.names.get_by_name(name)
