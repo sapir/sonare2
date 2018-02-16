@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import React, { Component } from 'react';
+import { Link } from 'react-router-dom';
 import update from 'immutability-helper';
 import { doApiQuery } from './api';
 
@@ -40,6 +41,21 @@ export default class BasicBlock extends Component {
           } else {
             const name = (this.props.namesByAddress || {})[refValue];
             string = name || refValue.toString(16);
+
+            // TODO: "&& name" is only because API doesn't know how to get
+            // funcs by address yet. fix that then fix this.
+            // TODO: links to code that isn't a function start.
+            if (op.ref.dtype === "func" && name) {
+              return (
+                <Link
+                  key={i}
+                  className={className}
+                  to={`/func/${name}`}
+                >
+                  {string}
+                </Link>
+              );
+            }
           }
         }
       }
