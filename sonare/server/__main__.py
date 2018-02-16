@@ -40,10 +40,11 @@ class Sonare2WebServer(object):
         # names/functions/asm_lines
 
         # TODO: user can rename...?
-        addr = self.backend.names.get_by_name(name)
-        if addr is None:
+        name_obj = self.backend.names.get_by_name(name)
+        if name_obj is None:
             raise Exception(f"func {name!r} not found")
 
+        addr = name_obj.start
         func = self.backend.functions.get_at(addr)
         if func is None:
             raise Exception(
@@ -55,13 +56,14 @@ class Sonare2WebServer(object):
 
         d = range_to_dict(func)
 
-        d["asm_lines"] = ranges_to_list(
-            self.backend.asm_lines.iter_where_overlaps(
-                func.start, func_end))
+        def add_overlapping(table_name):
+            table = getattr(self.backend, table_name)
+            d[table_name] = ranges_to_list(
+                table.iter_where_overlaps(func.start, func_end))
 
-        d["user_lines"] = ranges_to_list(
-            self.backend.user_lines.iter_where_overlaps(
-                func.start, func_end))
+        add_overlapping("names")
+        add_overlapping("asm_lines")
+        add_overlapping("user_lines")
 
         return d
 
