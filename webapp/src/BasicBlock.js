@@ -55,7 +55,7 @@ export default class BasicBlock extends Component {
             && this.state.editField === editField);
   }
 
-  renderAsmLine(asmLine, maxMnemonicLength) {
+  renderAsmLine(asmLine, maxMnemonicLength, isFirstInBlock) {
     const tokens = asmLine.tokens;
     const mnemonicTokens = this.getMnemonicTokens(asmLine);
     const rest = _.drop(tokens, mnemonicTokens.length);
@@ -66,7 +66,13 @@ export default class BasicBlock extends Component {
 
     const lines = [];
 
-    if (asmLine.name) {
+    const name = (
+      asmLine.name ? asmLine.name
+      : isFirstInBlock ? `loc_${asmLine.start.toString(16)}`
+      : null
+    );
+
+    if (name) {
       // add an empty line
       // TODO: not for first line in block
       // TODO: don't include this in tabIndex etc.
@@ -75,7 +81,7 @@ export default class BasicBlock extends Component {
       // TODO: label should be a bit to the left of the code
       lines.push(
         <div key="label" className="label">
-          {asmLine.name}:
+          {name}:
         </div>
       );
     }
@@ -217,10 +223,11 @@ export default class BasicBlock extends Component {
 
     return (
       <div key={block.address} className="block">
-        <h5>0x{block.address.toString(16)}:</h5>
         {_.map(
           block.asmLines,
-          asmLine => this.renderAsmLine(asmLine, maxMnemonicLength)
+          (asmLine, i) => (
+            this.renderAsmLine(asmLine, maxMnemonicLength, (i === 0))
+          )
         )}
       </div>
     );
