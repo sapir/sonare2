@@ -197,7 +197,18 @@ export default class BasicBlock extends Component {
   saveEdit(event) {
     // TODO: push to server. clear localEdits on server reply.
     const {editAddr, editField} = this.state;
-    const {value} = event.target;
+    let {value} = event.target;
+
+    // set to null when empty because otherwise we get DB conflicts for the
+    // line named "" (on clearing names).
+
+    // TODO: user_lines table overrides everything else, so although clearing
+    // the name might mean "don't override the default", it might really mean
+    // "don't use the default, clear the name completely". it seems we're doing
+    // the former, maybe we should be doing the latter.
+
+    if (!value)
+      value = null;
 
     this.setState({
       editAddr: null,
