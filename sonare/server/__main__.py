@@ -36,6 +36,7 @@ class Sonare2WebServer(object):
     @cherrypy.expose
     @cherrypy.tools.json_out()
     def func(self, name):
+        # TODO: user can rename...?
         func = self.backend.functions.get_by_name(name)
         if func is None:
             raise Exception(f"func {name!r} not found")
@@ -55,6 +56,18 @@ class Sonare2WebServer(object):
                 func.start, func_end))
 
         return d
+
+    @cherrypy.expose
+    @cherrypy.tools.json_in()
+    def set_line_name(self):
+        j = cherrypy.request.json
+        self.backend.user_lines.upsert(j["addr"], name=j["name"])
+
+    @cherrypy.expose
+    @cherrypy.tools.json_in()
+    def set_line_comment(self):
+        j = cherrypy.request.json
+        self.backend.user_lines.upsert(j["addr"], comment=j["comment"])
 
 
 if __name__ == '__main__':
