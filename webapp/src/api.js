@@ -9,15 +9,22 @@ export class ApiError extends Error {
   }
 }
 
-export async function doApiQuery(url, fetchArgs) {
+
+export async function doApiQuery(url, json, fetchArgs) {
   if (!fetchArgs)
     fetchArgs = {};
 
   _.merge(fetchArgs, {
     headers: {
       'Accept': 'application/json',
+      'Content-Type': 'application/json',
     },
   });
+
+  if (json) {
+    fetchArgs.method = "POST";
+    fetchArgs.body = JSON.stringify(json);
+  }
 
   const response = await fetch(`/api/${url}`, fetchArgs);
 

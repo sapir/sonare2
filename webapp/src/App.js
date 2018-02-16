@@ -28,9 +28,9 @@ class App extends Component {
     this.props.history.push(`/func/${funcName}`);
   }
 
-  async doApiQuery(url, fetchArgs) {
+  async doApiQuery(url, json, fetchArgs) {
     try {
-      return await doApiQuery(url, fetchArgs);
+      return await doApiQuery(url, json, fetchArgs);
     } catch (e) {
       this.setState({error: e});
       throw e;
