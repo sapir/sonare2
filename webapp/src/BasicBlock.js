@@ -1,6 +1,7 @@
 import _ from 'lodash';
 import React, { Component } from 'react';
 import update from 'immutability-helper';
+import { doApiQuery } from './api';
 
 
 export default class BasicBlock extends Component {
@@ -178,7 +179,25 @@ export default class BasicBlock extends Component {
         }),
     });
 
+    this.uploadEdit(editAddr, editField, value);
+
     event.preventDefault();
+  }
+
+  async uploadEdit(editAddr, editField, value) {
+    // TODO: on error...? do what?
+    switch (editField) {
+    case "comment":
+      await doApiQuery(
+        "/set_line_comment",
+        {
+          addr: editAddr,
+          comment: value,
+        });
+      break;
+
+    default: break;
+    }
   }
 
   render() {

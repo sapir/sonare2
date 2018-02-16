@@ -59,17 +59,23 @@ class Sonare2WebServer(object):
 
     @cherrypy.expose
     @cherrypy.tools.json_in()
+    @cherrypy.tools.json_out()
     def set_line_name(self):
         j = cherrypy.request.json
         with self.backend.userdb:
             self.backend.user_lines.upsert(j["addr"], name=j["name"])
 
+        return {"ok": True}
+
     @cherrypy.expose
     @cherrypy.tools.json_in()
+    @cherrypy.tools.json_out()
     def set_line_comment(self):
         j = cherrypy.request.json
         with self.backend.userdb:
             self.backend.user_lines.upsert(j["addr"], comment=j["comment"])
+
+        return {"ok": True}
 
 
 if __name__ == '__main__':
