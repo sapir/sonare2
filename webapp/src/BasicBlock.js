@@ -133,6 +133,11 @@ export default class BasicBlock extends Component {
   }
 
   onAsmLineKeyPress(asmLine, event) {
+    if (this.state.editField) {
+      // already editing, let text <input> handle key presses
+      return;
+    }
+
     switch (event.key) {
     case ";":
       this.setState({editAddr: asmLine.start, editField: "comment"});
