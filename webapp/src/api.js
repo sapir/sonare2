@@ -6,8 +6,8 @@ export class ApiError extends Error {
   }
 }
 
-export async function doApiQuery(url, ...fetchArgs) {
-  const response = await fetch(`/api/${url}`, ...fetchArgs);
+export async function doApiQuery(url, fetchArgs) {
+  const response = await fetch(`/api/${url}`, fetchArgs);
 
   if (!response.ok) {
     const text = await response.text();
