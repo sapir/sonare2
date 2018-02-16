@@ -36,10 +36,18 @@ class Sonare2WebServer(object):
     @cherrypy.expose
     @cherrypy.tools.json_out()
     def func(self, name):
+        # TODO: clear up where names should really be,
+        # names/functions/asm_lines
+
         # TODO: user can rename...?
-        func = self.backend.functions.get_by_name(name)
-        if func is None:
+        addr = self.backend.names.get_by_name(name)
+        if addr is None:
             raise Exception(f"func {name!r} not found")
+
+        func = self.backend.functions.get_at(addr)
+        if func is None:
+            raise Exception(
+                f"{name!r}={addr:#x} but func @ {addr:#x} not found")
 
         analyze_func(self.backend, func)
 
