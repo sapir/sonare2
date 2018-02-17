@@ -166,6 +166,10 @@ export default class BasicBlock extends Component {
 
     lines.push(
       <div key="asm">
+        <span className="address">
+          {_.padStart(asmLine.start.toString(16), 8, "\u00a0")}
+        </span>
+        {_.repeat("\u00a0", 2)}
         {this.renderAsmTokens(asmLine, mnemonicTokens)}
         {/*
           pad mnemonics to max width, with non-breaking spaces.
