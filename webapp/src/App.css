@@ -7,6 +7,18 @@
   height: 100%;
 }
 
+.label {
+    color: #cc6633;
+}
+
+.address {
+    color: #75715e;
+}
+
+.comment {
+    color: #f8f8f2;
+}
+
 .token-syntax {
     color: #f8f8f2;
 }
