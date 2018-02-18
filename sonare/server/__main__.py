@@ -1,22 +1,26 @@
 import os
 import cherrypy
+from functools import partial
 from sonare.backend import Backend
 from sonare.backend.loaders import load_elf
 from sonare.backend.analysis import analyze_func
 
 
-def range_to_dict(r):
+def range_to_dict(r, with_attrs=True):
     d = {
         "name": r.name,
         "start": r.start,
         "size": r.size,
     }
-    d.update(r.attrs)
+
+    if with_attrs:
+        d.update(r.attrs)
+
     return d
 
 
-def ranges_to_list(rs):
-    return list(map(range_to_dict, rs))
+def ranges_to_list(rs, **kwargs):
+    return list(map(partial(range_to_dict, **kwargs), rs))
 
 
 class Root(object):
@@ -48,7 +52,18 @@ class Sonare2WebServer(object):
     @cherrypy.expose
     @cherrypy.tools.json_out()
     def names(self):
-        return ranges_to_list(self.backend.names.iter_by_name())
+        # merge names and user-defined names. prefer user-defined names
+        names = list(self.backend.user_lines.iter_by_name())
+        userdef_name_addrs = {line.start for line in names}
+
+        names += [
+            name_obj for name_obj in self.backend.names.iter_by_name()
+            if name_obj.start not in userdef_name_addrs
+        ]
+
+        names.sort(key=lambda line: line.name)
+
+        return ranges_to_list(names, with_attrs=False)
 
     @cherrypy.expose
     @cherrypy.tools.json_out()
