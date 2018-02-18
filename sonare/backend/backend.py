@@ -180,7 +180,7 @@ class RangeTable:
 
         return self._add(start, end, name, kwargs)
 
-    def upsert(self, start, end=None, name=None, **kwargs):
+    def upsert(self, start, end=None, **kwargs):
         if end is None:
             end = start + 1
 
@@ -189,17 +189,39 @@ class RangeTable:
             if existing:
                 assert existing.end == end
 
+                if not kwargs:
+                    # nothing to modify
+                    return existing.id_
+
+                set_clauses = []
+                query_params = []
+
+                try:
+                    name = kwargs.pop("name")
+                except KeyError:
+                    pass
+                else:
+                    set_clauses.append("name=?")
+                    query_params.append(name)
+
+                if kwargs:
+                    set_clauses.append("attrs=json_patch(attrs, ?)")
+                    query_params.append(kwargs)
+
+                query_params.append(existing.id_)
+
                 cur = self.db.cursor()
                 cur.execute(
                     f"""
                     UPDATE {self.name}
-                    SET name=?, attrs=json_patch(attrs, ?)
+                    SET {", ".join(set_clauses)}
                     WHERE id=?
                     """,
-                    (name, kwargs, existing.id_))
+                    query_params)
 
                 return existing.id_
             else:
+                name = kwargs.pop("name", None)
                 return self._add(start, end, name, kwargs)
 
     def add_obj(self, range_obj):
