@@ -239,9 +239,10 @@ class RangeTable:
         cur.execute(f"SELECT * FROM {self.name} ORDER BY start")
         return map(self._row_to_obj, cur)
 
-    def iter_by_name(self):
+    def iter_by_name(self, only_named=True):
         cur = self.db.cursor()
-        cur.execute(f"SELECT * FROM {self.name} ORDER BY name")
+        where_clause = "WHERE name IS NOT NULL" if only_named else ""
+        cur.execute(f"SELECT * FROM {self.name} {where_clause} ORDER BY name")
         return map(self._row_to_obj, cur)
 
     def iter_where_overlaps(self, start, end):
