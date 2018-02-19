@@ -200,11 +200,17 @@ class AvrArch(BaseArch):
         elif insn_name in ["jmp", "call"]:
             flow.append(operands[0]["imm"])
 
+        # branch flow for "skip if" instructions, i.e. cpse, sbrc, sbrs, sbic,
+        # sbis
+        elif insn_name in ["cpse", "sbrc", "sbrs", "sbic", "sbis"]:
+            next_asm_line = self.backend.asm_lines.get_at(asm_line.end)
+            # TODO: warning if next_asm_line is missing?
+            # TODO: this should generate a dependency on the next line
+            if next_asm_line:
+                flow.append(next_asm_line.end)
+
         # don't know target address for icall and eicall, so treat it as a
         # regular instruction, i.e. flow continues to next instruction
-
-        # TODO: maybe add branch flow for "skip if" instructions, i.e. cpse,
-        # sbrc, sbrs, sbic, sbis
 
         if not insn_name.endswith("jmp"):
             flow.append(next_addr)
