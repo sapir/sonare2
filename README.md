@@ -1,3 +1,3 @@
 # sonare2
 
-A disassembly tool.
+A disassembly and reverse engineering tool.
