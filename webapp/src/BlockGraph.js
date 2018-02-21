@@ -90,10 +90,17 @@ export default class BlockGraph extends Component {
     for (let block of blocks) {
       const address = block.address;
 
-      // blockSizes actually also contains other stuff, let's not put it in the
-      // node label
-      const {width, height} = this.state.blockSizes[address];
-      g.setNode(address, {width: width, height: height});
+      const label = {};
+
+      const blockSize = this.state.blockSizes[address];
+      if (blockSize) {
+        // blockSizes actually also contains other stuff, let's not put it in
+        // the node label. filter it out.
+        label.width = blockSize.width;
+        label.height = blockSize.height;
+      }
+
+      g.setNode(address, label);
 
       for (let toAddr of block.flow) {
         g.setEdge(address, toAddr);
@@ -115,6 +122,63 @@ export default class BlockGraph extends Component {
     }
   }
 
+  nodeHasLayout(label) {
+    return (
+        label.left !== undefined
+        && label.top !== undefined
+        && label.width !== undefined
+        && label.height !== undefined
+    );
+  }
+
+  renderSvgBlock(block, node) {
+    const {left, top} = node;
+
+    let sizeProps = (
+      this.nodeHasLayout(node)
+      ? {width: node.width, height: node.height}
+      // if we don't have a layout, just use a really big maximum number
+      // so that BasicBlock component isn't constrained
+      : {width: 20000, height: 20000}
+    );
+
+    return (
+      <g
+        key={block.address}
+        transform={
+          this.nodeHasLayout(node)
+          ? `translate(${left},${top})`
+          : null
+        }
+      >
+        <rect className="block" {...sizeProps} />
+
+        <foreignObject {...sizeProps}>
+          <Measure
+            bounds
+            onResize={contentRect => {
+              this.setState({
+                blockSizes: update(
+                  this.state.blockSizes,
+                  {[block.address]: {$set: contentRect.bounds}}
+                ),
+              });
+            }}
+          >
+            {({measureRef}) => (
+              <div ref={measureRef} style={{display: "inline-block"}}>
+                <BasicBlock
+                  block={block}
+                  namesByAddress={this.state.namesByAddress}
+                  />
+              </div>
+            )}
+          </Measure>
+        </foreignObject>
+      </g>
+    );
+  }
+
   renderSvg() {
     if (!this.state.func || !this.state.func.blocks) {
       return null;
@@ -123,52 +187,25 @@ export default class BlockGraph extends Component {
     const blocks = this.state.func.blocks;
     const gotAllSizes = _.every(
       blocks, block => this.state.blockSizes[block.address]);
-    if (!gotAllSizes) {
-      // render invisible blocks
-      return (
-        <div style={{opacity: 0}}>
-          {_.map(blocks, block => (
-            <div key={block.address}>
-              <Measure
-                bounds
-                onResize={contentRect => {
-                  this.setState({
-                    blockSizes: update(
-                      this.state.blockSizes,
-                      {[block.address]: {$set: contentRect.bounds}}
-                    ),
-                  });
-                }}
-              >
-                {({measureRef}) => (
-                  <div ref={measureRef} style={{display: "inline-block"}}>
-                    <BasicBlock
-                      block={block}
-                      namesByAddress={this.state.namesByAddress}
-                      />
-                  </div>
-                )}
-              </Measure>
-            </div>
-          ))}
-        </div>
-      );
-    }
 
-    let blocksByAddress = _.fromPairs(
+    const blocksByAddress = _.fromPairs(
       _.map(blocks, block => [block.address, block]));
 
     const g = this.makeBlockGraph(blocks);
-    this.layoutBlockGraph(g);
-
     const nodes = g.nodes();
-    const nodeLabels = _.map(nodes, nodeID => g.node(nodeID));
 
-    const graphWidth = _.max(_.map(nodeLabels, n => n.left + n.width));
-    const graphHeight = _.max(_.map(nodeLabels, n => n.top + n.height));
+    const svgProps = {};
+    if (gotAllSizes) {
+      this.layoutBlockGraph(g);
+
+      const nodeLabels = _.map(nodes, nodeID => g.node(nodeID));
+
+      svgProps.width = _.max(_.map(nodeLabels, n => n.left + n.width));
+      svgProps.height = _.max(_.map(nodeLabels, n => n.top + n.height));
+    }
 
     return (
-      <svg width={graphWidth} height={graphHeight} className="block-graph">
+      <svg className="block-graph" {...svgProps}>
         <rect width="100%" height="100%" className="background" />
 
         <marker
@@ -183,37 +220,18 @@ export default class BlockGraph extends Component {
           <path d="M0,0 L0,9 L10,4.5 Z" />
         </marker>
 
-        <g>
+        <g style={gotAllSizes ? null : {opacity: 0}}>
           {_.map(nodes, nodeID => {
             const node = g.node(nodeID);
-            const {left, top, width, height} = node;
-
             const block = blocksByAddress[nodeID];
-
-            return (
-              <g
-                key={nodeID}
-                transform={`translate(${left},${top})`}
-              >
-                <rect
-                  width={width}
-                  height={height}
-                  className="block"
-                  />
-
-                <foreignObject width={width} height={height}>
-                  <BasicBlock
-                    block={block}
-                    namesByAddress={this.state.namesByAddress}
-                    />
-                </foreignObject>
-              </g>
-            );
+            return this.renderSvgBlock(block, node);
           })}
 
           {_.map(g.edges(), ({v, w}) => {
             let nodeA = g.node(v);
             let nodeB = g.node(w);
+            if (!this.nodeHasLayout(nodeA) || !this.nodeHasLayout(nodeB))
+              return null;
 
             return (
               <line
