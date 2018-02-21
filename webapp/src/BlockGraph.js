@@ -75,9 +75,21 @@ export default class BlockGraph extends Component {
         block.asmLines = _.map(block.opcodes, addr => asmLinesByAddress[addr]);
       }
 
-      this.setState({func: func, namesByAddress: namesByAddress, error: null});
+      this.setState({
+        error: null,
+        func: func,
+        blockSizes: {},
+        namesByAddress: namesByAddress,
+      });
+
     } catch (e) {
-      this.setState({error: e, func: null, namesByAddress: null});
+      this.setState({
+        error: e,
+        func: null,
+        blockSizes: {},
+        namesByAddress: null,
+      });
+
       throw e;
     }
   }
