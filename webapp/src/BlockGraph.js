@@ -150,8 +150,14 @@ export default class BlockGraph extends Component {
     for (let nodeID of g.nodes()) {
       const n = g.node(nodeID);
 
+      if (n.x !== undefined)
+        n.x += dx;
+
       if (n.left !== undefined)
         n.left += dx;
+
+      if (n.y !== undefined)
+        n.y += dy;
 
       if (n.top !== undefined)
         n.top += dy;
