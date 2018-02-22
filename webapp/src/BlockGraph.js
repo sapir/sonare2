@@ -143,6 +143,18 @@ export default class BlockGraph extends Component {
     }
   }
 
+  moveLayout(g, dx, dy) {
+    for (let nodeID of g.nodes()) {
+      const n = g.node(nodeID);
+
+      if (n.left !== undefined)
+        n.left += dx;
+
+      if (n.top !== undefined)
+        n.top += dy;
+    }
+  }
+
   nodeHasLayout(label) {
     return (
         label.left !== undefined
@@ -216,62 +228,83 @@ export default class BlockGraph extends Component {
     const g = this.makeBlockGraph(blocks);
     const nodes = g.nodes();
 
-    const svgProps = {};
+    let graphWidth, graphHeight;
     if (gotAllSizes) {
       this.layoutBlockGraph(g);
 
       const nodeLabels = _.map(nodes, nodeID => g.node(nodeID));
-
-      svgProps.width = _.max(_.map(nodeLabels, n => n.left + n.width));
-      svgProps.height = _.max(_.map(nodeLabels, n => n.top + n.height));
+      graphWidth = _.max(_.map(nodeLabels, n => n.left + n.width));
+      graphHeight = _.max(_.map(nodeLabels, n => n.top + n.height));
+    } else {
+      graphWidth = 0;
+      graphHeight = 0;
     }
 
     return (
       <AutoSizer>
-        {({width, height}) => (
-          <DragScroll width={width} height={height}>
-            <svg className="block-graph" {...svgProps}>
-              <rect width="100%" height="100%" className="background" />
+        {({width, height}) => {
+          // if necesssary, expand the graph to fill the viewport, and center
+          // its content.
 
-              <marker
-                id="arrow"
-                markerWidth={10}
-                markerHeight={9}
-                refX={10}
-                refY={4.5}
-                markerUnits="strokeWidth"
-                orient="auto"
+          if (graphWidth < width) {
+            this.moveLayout(g, (width - graphWidth) / 2, 0);
+            graphWidth = width;
+          }
+
+          if (graphHeight < height) {
+            this.moveLayout(g, 0, (height - graphHeight) / 2);
+            graphHeight = height;
+          }
+
+          return (
+            <DragScroll width={width} height={height}>
+              <svg
+                className="block-graph"
+                width={graphWidth}
+                height={graphHeight}
               >
-                <path d="M0,0 L0,9 L10,4.5 Z" />
-              </marker>
+                <rect width="100%" height="100%" className="background" />
 
-              <g style={gotAllSizes ? null : {opacity: 0}}>
-                {_.map(nodes, nodeID => {
-                  const node = g.node(nodeID);
-                  const block = blocksByAddress[nodeID];
-                  return this.renderSvgBlock(block, node);
-                })}
+                <marker
+                  id="arrow"
+                  markerWidth={10}
+                  markerHeight={9}
+                  refX={10}
+                  refY={4.5}
+                  markerUnits="strokeWidth"
+                  orient="auto"
+                >
+                  <path d="M0,0 L0,9 L10,4.5 Z" />
+                </marker>
 
-                {_.map(g.edges(), ({v, w}) => {
-                  let nodeA = g.node(v);
-                  let nodeB = g.node(w);
-                  if (!this.nodeHasLayout(nodeA) || !this.nodeHasLayout(nodeB))
-                    return null;
+                <g style={gotAllSizes ? null : {opacity: 0}}>
+                  {_.map(nodes, nodeID => {
+                    const node = g.node(nodeID);
+                    const block = blocksByAddress[nodeID];
+                    return this.renderSvgBlock(block, node);
+                  })}
 
-                  return (
-                    <line
-                      key={[v, w]}
-                      x1={nodeA.x} y1={nodeA.top + nodeA.height + 2}
-                      x2={nodeB.x} y2={nodeB.top - 2}
-                      strokeWidth={2} stroke="black"
-                      markerEnd="url(#arrow)"
-                      />
-                  );
-                })}
-              </g>
-            </svg>
-          </DragScroll>
-        )}
+                  {_.map(g.edges(), ({v, w}) => {
+                    let nodeA = g.node(v);
+                    let nodeB = g.node(w);
+                    if (!this.nodeHasLayout(nodeA) || !this.nodeHasLayout(nodeB))
+                      return null;
+
+                    return (
+                      <line
+                        key={[v, w]}
+                        x1={nodeA.x} y1={nodeA.top + nodeA.height + 2}
+                        x2={nodeB.x} y2={nodeB.top - 2}
+                        strokeWidth={2} stroke="black"
+                        markerEnd="url(#arrow)"
+                        />
+                    );
+                  })}
+                </g>
+              </svg>
+            </DragScroll>
+          );
+        }}
       </AutoSizer>
     );
   }
