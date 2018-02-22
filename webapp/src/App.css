@@ -4,7 +4,9 @@
 }
 
 .main-content {
-  height: 100%;
+    height: 100%;
+    /* compensate for "wide" sidebar, see semantic-ui sidebar.css */
+    padding-right: 350px;
 }
 
 .label {

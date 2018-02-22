@@ -65,15 +65,13 @@ class App extends Component {
             </List>
           </Sidebar>
 
-          <Sidebar.Pusher>
-            <Segment className="main-content" vertical>
-              {/* TODO: only for debugging? */}
-              <ErrorMessage error={this.state.error} />
+          <Sidebar.Pusher className="main-content">
+            {/* TODO: only for debugging? */}
+            <ErrorMessage error={this.state.error} />
 
-              {this.props.match.params.funcName && (
-                <BlockGraph funcName={this.props.match.params.funcName} />
-              )}
-            </Segment>
+            {this.props.match.params.funcName && (
+              <BlockGraph funcName={this.props.match.params.funcName} />
+            )}
           </Sidebar.Pusher>
         </Sidebar.Pushable>
       </div>

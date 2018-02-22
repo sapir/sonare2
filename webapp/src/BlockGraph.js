@@ -2,7 +2,9 @@ import _ from 'lodash';
 import React, { Component } from 'react';
 import update from 'immutability-helper';
 import dagre from 'dagre';
+import { AutoSizer } from 'react-virtualized'
 import Measure from 'react-measure';
+import DragScroll from 'react-dragscroll';
 import { doApiQuery } from './api';
 import ErrorMessage from './ErrorMessage';
 import BasicBlock from './BasicBlock';
@@ -11,6 +13,8 @@ import BasicBlock from './BasicBlock';
 export default class BlockGraph extends Component {
   constructor(props) {
     super(props);
+
+    this.onBlockMouseDown = this.onBlockMouseDown.bind(this);
 
     // TODO: clear blockSizes on function change
     this.state = {
@@ -92,6 +96,11 @@ export default class BlockGraph extends Component {
 
       throw e;
     }
+  }
+
+  onBlockMouseDown(event) {
+    // prevent dragging when trying to select text
+    event.stopPropagation();
   }
 
   makeBlockGraph(blocks) {
@@ -182,6 +191,7 @@ export default class BlockGraph extends Component {
                 <BasicBlock
                   block={block}
                   namesByAddress={this.state.namesByAddress}
+                  onMouseDown={this.onBlockMouseDown}
                   />
               </div>
             )}
@@ -217,52 +227,58 @@ export default class BlockGraph extends Component {
     }
 
     return (
-      <svg className="block-graph" {...svgProps}>
-        <rect width="100%" height="100%" className="background" />
+      <AutoSizer>
+        {({width, height}) => (
+          <DragScroll width={width} height={height}>
+            <svg className="block-graph" {...svgProps}>
+              <rect width="100%" height="100%" className="background" />
 
-        <marker
-          id="arrow"
-          markerWidth={10}
-          markerHeight={9}
-          refX={10}
-          refY={4.5}
-          markerUnits="strokeWidth"
-          orient="auto"
-        >
-          <path d="M0,0 L0,9 L10,4.5 Z" />
-        </marker>
+              <marker
+                id="arrow"
+                markerWidth={10}
+                markerHeight={9}
+                refX={10}
+                refY={4.5}
+                markerUnits="strokeWidth"
+                orient="auto"
+              >
+                <path d="M0,0 L0,9 L10,4.5 Z" />
+              </marker>
 
-        <g style={gotAllSizes ? null : {opacity: 0}}>
-          {_.map(nodes, nodeID => {
-            const node = g.node(nodeID);
-            const block = blocksByAddress[nodeID];
-            return this.renderSvgBlock(block, node);
-          })}
+              <g style={gotAllSizes ? null : {opacity: 0}}>
+                {_.map(nodes, nodeID => {
+                  const node = g.node(nodeID);
+                  const block = blocksByAddress[nodeID];
+                  return this.renderSvgBlock(block, node);
+                })}
 
-          {_.map(g.edges(), ({v, w}) => {
-            let nodeA = g.node(v);
-            let nodeB = g.node(w);
-            if (!this.nodeHasLayout(nodeA) || !this.nodeHasLayout(nodeB))
-              return null;
+                {_.map(g.edges(), ({v, w}) => {
+                  let nodeA = g.node(v);
+                  let nodeB = g.node(w);
+                  if (!this.nodeHasLayout(nodeA) || !this.nodeHasLayout(nodeB))
+                    return null;
 
-            return (
-              <line
-                key={[v, w]}
-                x1={nodeA.x} y1={nodeA.top + nodeA.height + 2}
-                x2={nodeB.x} y2={nodeB.top - 2}
-                strokeWidth={2} stroke="black"
-                markerEnd="url(#arrow)"
-                />
-            );
-          })}
-        </g>
-      </svg>
+                  return (
+                    <line
+                      key={[v, w]}
+                      x1={nodeA.x} y1={nodeA.top + nodeA.height + 2}
+                      x2={nodeB.x} y2={nodeB.top - 2}
+                      strokeWidth={2} stroke="black"
+                      markerEnd="url(#arrow)"
+                      />
+                  );
+                })}
+              </g>
+            </svg>
+          </DragScroll>
+        )}
+      </AutoSizer>
     );
   }
 
   render() {
     return (
-      <div>
+      <div style={{height: "100%"}}>
         <ErrorMessage error={this.state.error} />
         {this.renderSvg()}
       </div>

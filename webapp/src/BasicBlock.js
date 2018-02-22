@@ -304,7 +304,11 @@ export default class BasicBlock extends Component {
     );
 
     return (
-      <div key={block.address} className="block">
+      <div
+        key={block.address}
+        className="block"
+        onMouseDown={this.props.onMouseDown}
+      >
         {_.map(
           block.asmLines,
           (asmLine, i) => (
