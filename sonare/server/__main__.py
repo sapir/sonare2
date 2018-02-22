@@ -1,4 +1,5 @@
 import os
+import argparse
 import cherrypy
 from functools import partial
 from sonare.backend import Backend
@@ -28,9 +29,8 @@ class Root(object):
 
 
 class Sonare2WebServer(object):
-    def __init__(self):
-        self.backend = Backend(userdb_filename="server.userdb")
-        load_elf(self.backend, "test.so")
+    def __init__(self, backend):
+        self.backend = backend
 
     def get_reffed_addrs(self, from_addrs):
         asm_lines = self.backend.asm_lines.get_at_many(from_addrs)
@@ -145,4 +145,16 @@ if __name__ == '__main__':
             }
         })
 
-    cherrypy.quickstart(Sonare2WebServer(), "/api")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--userdb", required=False)
+    parser.add_argument("input_file")
+
+    args = parser.parse_args()
+
+    userdb = args.userdb or args.input_file + ".userdb"
+    backend = Backend(userdb_filename=userdb)
+    load_elf(backend, args.input_file)
+
+    s2_server = Sonare2WebServer(backend)
+
+    cherrypy.quickstart(s2_server, "/api")
