@@ -3,6 +3,10 @@
   font-family: "Source Code Pro", "Ubuntu Mono", "Consolas", monospace;
 }
 
+.ui.inverted.segment {
+    background: #1e1e1e;
+}
+
 .main-content {
     height: 100%;
     /* compensate for "wide" sidebar, see semantic-ui sidebar.css */
