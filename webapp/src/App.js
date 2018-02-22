@@ -50,7 +50,7 @@ class App extends Component {
   render() {
     return (
       <div className="App">
-        <Sidebar.Pushable as={Segment}>
+        <Sidebar.Pushable as={Segment} inverted>
           <Sidebar as={Segment} animation='push' width='wide' visible={true} icon='labeled' inverted vertical>
             <Header as="h3">Names</Header>
             <List>
