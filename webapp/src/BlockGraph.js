@@ -10,6 +10,9 @@ import ErrorMessage from './ErrorMessage';
 import BasicBlock from './BasicBlock';
 
 
+const margin = 15;
+
+
 export default class BlockGraph extends Component {
   constructor(props) {
     super(props);
@@ -235,6 +238,10 @@ export default class BlockGraph extends Component {
       const nodeLabels = _.map(nodes, nodeID => g.node(nodeID));
       graphWidth = _.max(_.map(nodeLabels, n => n.left + n.width));
       graphHeight = _.max(_.map(nodeLabels, n => n.top + n.height));
+
+      this.moveLayout(g, margin, margin);
+      graphWidth += margin * 2;
+      graphHeight += margin * 2;
     } else {
       graphWidth = 0;
       graphHeight = 0;
