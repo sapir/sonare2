@@ -265,6 +265,9 @@ class AvrArch(BaseArch):
         while i < len(ret) - 1:
             line1 = ret[i]
             line2 = ret[i + 1]
+            if line1.get("elided"):
+                i += 1
+                continue
 
             insn_names = (line1["insn_name"], line2["insn_name"])
 
