@@ -271,6 +271,16 @@ class AvrArch(BaseArch):
 
             insn_names = (line1["insn_name"], line2["insn_name"])
 
+            if (insn_names in [("add", "adc"), ("sub", "sbc"), ("cp", "cpc")]):
+                reg11, reg12 = line1["operands"]
+                reg21, reg22 = line2["operands"]
+                if (self.are_reg_pair(reg11, reg21) and
+                        self.are_reg_pair(reg12, reg22)):
+
+                    line1["tokens"][0]["string"] = insn_names[0] + "w"
+                    line2["tokens"] = [{"type": "mnemonic", "string": "---"}]
+                    line2["elided"] = True
+
             if (insn_names in [("subi", "sbci"), ("ldi", "ldi")]):
                 reg1, imm1 = line1["operands"]
                 reg2, imm2 = line2["operands"]
