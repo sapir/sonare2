@@ -198,7 +198,7 @@ class AvrArch(BaseArch):
             assert operands[0]["type"] == "rel"
             flow.append(next_addr + operands[0]["disp"])
 
-        elif insn_name in ["jmp", "call"]:
+        elif insn_name in ["jmp"]:
             flow.append(operands[0]["imm"])
 
         # branch flow for "skip if" instructions, i.e. cpse, sbrc, sbrs, sbic,
