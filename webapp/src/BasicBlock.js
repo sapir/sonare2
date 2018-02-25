@@ -88,6 +88,9 @@ export default class BasicBlock extends Component {
   }
 
   renderAsmLine(asmLine, maxMnemonicLength, isFirstInBlock) {
+    if (asmLine.elided)
+      return null;
+
     const tokens = asmLine.tokens;
     const mnemonicTokens = this.getMnemonicTokens(asmLine);
     const rest = _.drop(tokens, mnemonicTokens.length);

@@ -97,6 +97,7 @@ def analyze_func(backend, func):
             flow=opcode["flow"],
             operands=opcode["operands"],
             tokens=opcode["tokens"],
+            elided=opcode.get("elided", None),
         )
 
     block_graph = make_block_graph(opcodes)

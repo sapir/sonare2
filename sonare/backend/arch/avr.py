@@ -218,7 +218,7 @@ class AvrArch(BaseArch):
 
         return flow
 
-    def analyze_opcodes(self, start, end, mode=None):
+    def _analyze_opcodes(self, start, end, mode=None):
         for asm_line in self.backend.asm_lines.iter_where_overlaps(start, end):
             text = asm_line.attrs["text"]
 
@@ -248,3 +248,61 @@ class AvrArch(BaseArch):
                 "flow": flow,
                 "text": text,
             }
+
+    def are_reg_pair(self, op1, op2):
+        if op1["type"] == "reg" and op2["type"] == "reg":
+            n1 = int(op1["reg"][1:])
+            n2 = int(op2["reg"][1:])
+            if n2 == n1 + 1:
+                return True
+
+        return False
+
+    def analyze_opcodes(self, *args, **kwargs):
+        ret = list(self._analyze_opcodes(*args, **kwargs))
+
+        i = 0
+        while i < len(ret) - 1:
+            line1 = ret[i]
+            line2 = ret[i + 1]
+
+            insn_names = (line1["insn_name"], line2["insn_name"])
+
+            if (insn_names in [("subi", "sbci"), ("ldi", "ldi")]):
+                reg1, imm1 = line1["operands"]
+                reg2, imm2 = line2["operands"]
+                if self.are_reg_pair(reg1, reg2):
+                    word = (imm2["imm"] << 8) | imm1["imm"]
+                    if word >= 0x8000:
+                        word -= (1 << 16)
+
+                    line1["tokens"][0]["string"] = insn_names[0] + "w"
+                    line1["tokens"][-1]["string"] = format(word, "#x")
+                    line2["tokens"] = [{"type": "mnemonic", "string": "---"}]
+                    line2["elided"] = True
+
+            elif (insn_names in [("ld", "ldd"),
+                                 ("ldd", "ldd"),
+                                 ("st", "std"),
+                                 ("std", "std")]):
+
+                if insn_names[0].startswith("ld"):
+                    reg1, tgt1 = line1["operands"]
+                    reg2, tgt2 = line2["operands"]
+                else:
+                    tgt1, reg1 = line1["operands"]
+                    tgt2, reg2 = line2["operands"]
+
+                if (self.are_reg_pair(reg1, reg2) and
+                        tgt2["base"] == tgt1["base"] and
+                        tgt2["disp"] == tgt1["disp"] + 1 and
+                        not tgt1["predec"] and not tgt1["postinc"] and
+                        not tgt2["predec"] and not tgt2["postinc"]):
+
+                    line1["tokens"][0]["string"] = insn_names[0] + "w"
+                    line2["tokens"] = [{"type": "mnemonic", "string": "---"}]
+                    line2["elided"] = True
+
+            i += 1
+
+        return ret
