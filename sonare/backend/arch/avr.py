@@ -271,7 +271,14 @@ class AvrArch(BaseArch):
 
             insn_names = (line1["insn_name"], line2["insn_name"])
 
-            if (insn_names in [("add", "adc"), ("sub", "sbc"), ("cp", "cpc")]):
+            if (insn_names in [("add", "adc"),
+                               ("adc", "adc"),
+                               ("sub", "sbc"),
+                               ("sbc", "sbc"),
+                               ("cp", "cpc"),
+                               ("cpc", "cpc"),
+                               ]):
+
                 reg11, reg12 = line1["operands"]
                 reg21, reg22 = line2["operands"]
                 if (self.are_reg_pair(reg11, reg21) and
