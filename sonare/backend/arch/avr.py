@@ -323,6 +323,23 @@ class AvrArch(BaseArch):
                     line2["tokens"] = [{"type": "mnemonic", "string": "---"}]
                     line2["elided"] = True
 
+            elif (insn_names in [("lds", "lds"),
+                                 ("sts", "sts")]):
+
+                if insn_names[0].startswith("ld"):
+                    reg1, tgt1 = line1["operands"]
+                    reg2, tgt2 = line2["operands"]
+                else:
+                    tgt1, reg1 = line1["operands"]
+                    tgt2, reg2 = line2["operands"]
+
+                if (self.are_reg_pair(reg1, reg2) and
+                        tgt2["imm"] == tgt1["imm"] + 1):
+
+                    line1["tokens"][0]["string"] = insn_names[0] + "w"
+                    line2["tokens"] = [{"type": "mnemonic", "string": "---"}]
+                    line2["elided"] = True
+
             i += 1
 
         return ret
