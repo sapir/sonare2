@@ -277,6 +277,10 @@ class AvrArch(BaseArch):
                                ("sbc", "sbc"),
                                ("cp", "cpc"),
                                ("cpc", "cpc"),
+                               ("mov", "mov"),
+                               ("eor", "eor"),
+                               ("and", "and"),
+                               ("or", "or"),
                                ]):
 
                 reg11, reg12 = line1["operands"]
@@ -288,7 +292,10 @@ class AvrArch(BaseArch):
                     line2["tokens"] = [{"type": "mnemonic", "string": "---"}]
                     line2["elided"] = True
 
-            if (insn_names in [("subi", "sbci"), ("ldi", "ldi")]):
+            if (insn_names in [("subi", "sbci"),
+                               ("sbci", "sbci"),
+                               ("ldi", "ldi")]):
+
                 reg1, imm1 = line1["operands"]
                 reg2, imm2 = line2["operands"]
                 if self.are_reg_pair(reg1, reg2):
