@@ -253,7 +253,7 @@ class AvrArch(BaseArch):
         if op1["type"] == "reg" and op2["type"] == "reg":
             n1 = int(op1["reg"][1:])
             n2 = int(op2["reg"][1:])
-            if n2 == n1 + 1:
+            if n1 % 2 == 0 and n2 == n1 + 1:
                 return True
 
         return False
