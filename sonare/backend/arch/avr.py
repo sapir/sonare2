@@ -52,7 +52,7 @@ class AvrArch(BaseArch):
         func_starts += [
             line["end"] for line in raw_asm_lines
             # TODO: any tailcall to a function, not just jmp 0
-            if line["text"] in ["ret", "reti", "jmp 0"]
+            if line["text"] in ["ret", "reti", "jmp 0", "ijmp", "eijmp"]
         ]
 
         # let last function end at end of file = last_line_end
