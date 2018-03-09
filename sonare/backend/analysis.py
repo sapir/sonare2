@@ -26,13 +26,18 @@ def make_block_graph(opcodes):
     def address_follows(address, opcode):
         return address == opcode["address"] + opcode["size"]
 
-    block_starts = {
-        address for address in flow_graph
-        if flow_graph.in_degree(address) != 1 or
-        flow_graph.out_degree(flow_graph.predecessors(address)[0]) != 1 or
-        not address_follows(
-            address, opcodes_by_address[flow_graph.predecessors(address)[0]])
-    }
+    block_starts = set()
+    for address in flow_graph:
+        if flow_graph.in_degree(address) == 1:
+            prev_addr = list(flow_graph.predecessors(address))[0]
+            if (flow_graph.out_degree(prev_addr) != 1 or
+                    not address_follows(address,
+                                        opcodes_by_address[prev_addr])):
+
+                block_starts.add(address)
+
+        else:
+            block_starts.add(address)
 
     # now tag nodes to blocks. start by tagging the block start nodes, then
     # copy the tags forward along edges.
@@ -65,7 +70,7 @@ def block_graph_to_dict(block_graph):
     def make_block_dict(address):
         return {
             "address": address,
-            "flow": block_graph.successors(address),
+            "flow": list(block_graph.successors(address)),
             "opcodes": block_graph.node[address]["opcodes"],
         }
 
