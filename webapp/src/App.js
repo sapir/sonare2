@@ -64,6 +64,7 @@ class App extends Component {
             <List>
               {_.map(this.state.names, name => (
                 <List.Item key={name.name}>
+                  {name.start.toString(16)}&nbsp;
                   {/* TODO: escaping etc. */}
                   <Link to={`/func/${name.name}`}>
                     {name.name}
