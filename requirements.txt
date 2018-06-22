@@ -1,0 +1,5 @@
+sortedcontainers>=1.5.9
+capstone>=3.0.4
+networkx>=2.1
+CherryPy>=14.0.0
+pyelftools>=0.24
